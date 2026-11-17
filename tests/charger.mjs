@@ -17,13 +17,14 @@ export function lireApplication() {
 }
 
 let modules
-// Les deux premiers modules du script (lecture des bilans, coffre chiffré) n'ont pas besoin du navigateur.
+// Les trois premiers modules du script (lecture des bilans, coffre chiffré, fiches) n'ont pas besoin du navigateur.
 export function charger() {
   if (!modules) {
-    const [lab, coffre] = lireApplication().scripts[0].split(/\n;\n/)
+    const [lab, coffre, dossier] = lireApplication().scripts[0].split(/\n;\n/)
     vm.runInThisContext(lab, {filename:'Lab (lecture des bilans)'})
     vm.runInThisContext(coffre, {filename:'Coffre (chiffrement)'})
-    modules = {Lab:globalThis.Lab, Coffre:globalThis.Coffre}
+    vm.runInThisContext(dossier, {filename:'Dossier (fiches et rappels)'})
+    modules = {Lab:globalThis.Lab, Coffre:globalThis.Coffre, Dossier:globalThis.Dossier}
   }
   return modules
 }

@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-onyKCJS6eU97St0p6BpUm93gb+YTeHbYGqEzQAK4Ock=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-hazPlnRhKgBCgtiX7JddXkwc+TFjnGcW8vKZWtuuBqg=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>Mon dossier santé</title>
@@ -196,7 +196,16 @@ p { line-height: 1.55; }
 .entry:hover { background: #f1f6ef; }
 .entry span { display: block; overflow-wrap: anywhere; }
 .entry .small { font-weight: 450; margin-top: 4px; }
-.entry time { font-weight: 520; font-variant-numeric: tabular-nums; font-size: .88rem; }
+.entry time, .entry .entry-aside { font-weight: 520; font-variant-numeric: tabular-nums; font-size: .88rem; text-align: right; }
+.entry .entry-warn { color: #74470a; font-weight: 650; }
+.year-head { margin: 20px 0 4px; padding-left: 7px; color: var(--muted); font-size: 1.05rem; letter-spacing: -.02em; }
+.year-head:first-child { margin-top: 0; }
+.profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; align-items: start; }
+.profile-grid details { margin-top: 12px; }
+.profile-grid summary { color: var(--muted); font-size: .9rem; font-weight: 630; padding: 3px 7px; }
+.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin: 0; }
+.facts dt { color: var(--muted); font-size: .88rem; }
+.facts dd { margin: 0; overflow-wrap: anywhere; }
 .pills { display: flex; flex-wrap: wrap; gap: 7px; }
 .pill { font-weight: 610; font-size: .81rem; background: var(--soft); padding: 5px 9px; border-radius: 20px; }
 .table-wrap { overflow: auto; }
@@ -302,7 +311,7 @@ dialog::backdrop { background: #0d201fb3; }
   .sidebar-foot { display: none; }
   .content { padding: 15px 13px 33px; }
   .toolbar { margin-bottom: 19px; }
-  .filter-bar, .vault-grid { grid-template-columns: 1fr; }
+  .filter-bar, .vault-grid, .profile-grid { grid-template-columns: 1fr; }
   .card { padding: 11px 8px; }
   .card strong { font-size: 1.6rem; }
   .card span { font-size: .77rem; }
@@ -378,9 +387,10 @@ dialog::backdrop { background: #0d201fb3; }
       <div class="brand"><span class="brand-icon" aria-hidden="true"></span> Mon dossier santé</div>
       <nav id="navigation" aria-label="Sections">
         <button type="button" data-nav="home" aria-current="page">Vue d’ensemble</button>
+        <button type="button" data-nav="profile">Fiche santé</button>
         <button type="button" data-nav="labs">Résultats</button>
         <button type="button" data-nav="tracking">Mon suivi biologique</button>
-        <button type="button" data-nav="docs">Documents</button>
+        <button type="button" data-nav="docs">Chronologie</button>
         <button type="button" data-nav="vault">Coffre</button>
       </nav>
       <div class="sidebar-foot"><span class="status-dot" aria-hidden="true"></span> Sur cet appareil</div>
@@ -417,10 +427,11 @@ dialog::backdrop { background: #0d201fb3; }
           </div>
         </div>
         <div class="form-grid">
-          <div class="field full"><label for="doc-title">Titre</label><input id="doc-title" required maxlength="160" placeholder="Bilan du 12 mars, ordonnance, consultation…"></div>
+          <div class="field full"><label for="doc-title" id="doc-title-label">Titre</label><input id="doc-title" required maxlength="160" placeholder="Bilan du 12 mars, ordonnance, consultation…"></div>
           <div class="field"><label for="doc-kind">Type de document</label><select id="doc-kind"></select></div>
           <div class="field"><label for="doc-date" id="doc-date-label">Date du document</label><input id="doc-date" type="date" min="1900-01-01" max="2199-12-31" required></div>
         </div>
+        <div id="extra-fields" class="form-grid" hidden></div>
         <section id="lab-fields" class="stack tight" aria-labelledby="measure-title" hidden>
           <div class="field">
             <label for="doc-lab">Laboratoire</label>
@@ -1108,9 +1119,21 @@ dialog::backdrop { background: #0d201fb3; }
     imaging:'Imagerie',
     report:'Compte rendu',
     vaccine:'Vaccination',
+    treatment:'Traitement',
+    allergy:'Allergie',
+    history:'Antécédent',
     note:'Note de santé',
     other:'Autre document',
   }
+  // Champs propres aux fiches. Nombre : longueur maximale d'un texte ; 'date' : date ou vide ; liste : valeurs admises.
+  const fieldRules = {
+    vaccine:{vaccine:120, lot:60, booster:'date'},
+    treatment:{dose:160, reason:160, prescriber:120, end:'date'},
+    allergy:{reaction:200, severity:['', 'mild', 'moderate', 'severe']},
+    history:{category:['', 'medical', 'surgical', 'family']},
+  }
+  // Types inconnus du premier format : leur présence fait passer le coffre au format 2.
+  const recentKinds = new Set(['treatment', 'allergy', 'history'])
   const labs = {cerballiance:'Cerballiance', checkup:'Check-Up', other:'Autre laboratoire'}
   const safeName = text => String(text ?? '').replace(/[\u0000-\u001f\u007f<>:"/\\|?*]/g, '_')
     .replace(/[\u202a-\u202e\u2066-\u2069]/g, '').trim().slice(0, 200) || 'document'
@@ -1161,6 +1184,19 @@ dialog::backdrop { background: #0d201fb3; }
         date:item.date, page,
       }
     })
+    const rules = fieldRules[input.kind] ?? {}
+    const given = input.fields ?? {}
+    if (typeof given !== 'object' || Array.isArray(given) || Object.keys(given).some(key => !Object.hasOwn(rules, key))) {
+      throw Error('Fiche invalide.')
+    }
+    const fields = {}
+    for (const [key, rule] of Object.entries(rules)) {
+      const value = given[key] ?? ''
+      const valid = typeof value === 'string' && (rule === 'date' ? value === '' || Lab.validDate(value) :
+        Array.isArray(rule) ? rule.includes(value) : value.length <= rule)
+      if (!valid) throw Error('Fiche invalide.')
+      if (value !== '') fields[key] = value
+    }
     let file = null
     if (input.file !== null) {
       const size = input.file?.size
@@ -1170,7 +1206,7 @@ dialog::backdrop { background: #0d201fb3; }
     }
     return {
       id, kind:input.kind, lab:input.lab, date:input.date, title:readText(input.title, 160, true),
-      notes:readText(input.notes, 6000), file, results,
+      notes:readText(input.notes, 6000), fields, file, results,
     }
   }
 
@@ -1192,7 +1228,10 @@ dialog::backdrop { background: #0d201fb3; }
         throw Error('Le document « ' + String(record?.title ?? '').slice(0, 80) + ' » contient un champ invalide ou trop long. Corrige-le avant d’enregistrer.')
       }
     })
-    const metadata = encoder.encode(JSON.stringify({version:1, records:list}))
+    // Format 2 dès qu'une fiche structurée existe : une ancienne version de l'application refuse alors le coffre
+    // au lieu de l'ouvrir en perdant ces données. Sans fiche, le coffre reste lisible partout (format 1).
+    const version = list.some(record => recentKinds.has(record.kind) || Object.keys(record.fields).length) ? 2 : 1
+    const metadata = encoder.encode(JSON.stringify({version, records:list}))
     if (metadata.length + 4 > 16 * MiB || list.length > 15000) throw Error('Le coffre dépasse sa capacité de classement.')
     const length = 4 + metadata.length + list.reduce((total, record) => total + (record.file?.size ?? 0), 0)
     if (length + headerLength + 16 > MAX_VAULT) throw Error('Le coffre dépasse sa limite de 150 Mo.')
@@ -1213,7 +1252,7 @@ dialog::backdrop { background: #0d201fb3; }
     const limit = 4 + new DataView(buffer).getUint32(0)
     if (limit > buffer.byteLength || limit > 16 * MiB) throw Error('Métadonnées invalides.')
     const data = JSON.parse(decoder.decode(new Uint8Array(buffer, 4, limit - 4)))
-    if (data.version !== 1 || !Array.isArray(data.records) || data.records.length > 15000) throw Error('Version ou format non reconnu.')
+    if ((data.version !== 1 && data.version !== 2) || !Array.isArray(data.records) || data.records.length > 15000) throw Error('Version ou format non reconnu.')
     const ids = new Set()
     let offset = limit
     const records = data.records.map(input => {
@@ -1338,7 +1377,77 @@ dialog::backdrop { background: #0d201fb3; }
     }
   }
 
-  globalThis.Coffre = {types, labs, MAX_VAULT, MAX_DOCUMENT, safeName, freshSalt, derive, inspect, open, seal, attachment, isPDF, isImage, writeFile, check, sameKey}
+  globalThis.Coffre = {types, labs, fieldRules, MAX_VAULT, MAX_DOCUMENT, safeName, freshSalt, derive, inspect, open, seal, attachment, isPDF, isImage, writeFile, check, sameKey}
+})()
+
+;
+(() => {
+  'use strict'
+
+  // Formulaires des fiches : libellés du titre et de la date, puis champs propres à chaque type.
+  // Champ : [clé, libellé, 'text' | 'date' | {valeur: libellé}, exemple].
+  const forms = {
+    vaccine:{add:'Ajouter une vaccination', title:'Intitulé', example:'Rappel DTP, vaccin grippe 2026…', date:'Date de l’injection', fields:[
+      ['vaccine', 'Vaccin ou maladie visée', 'text', 'Tétanos, grippe, hépatite B…'],
+      ['lot', 'Numéro de lot', 'text', ''],
+      ['booster', 'Prochain rappel prévu', 'date', ''],
+    ]},
+    treatment:{add:'Ajouter un traitement', title:'Médicament ou traitement', example:'Lévothyroxine 75 µg, kinésithérapie…', date:'Date de début', fields:[
+      ['dose', 'Posologie', 'text', '1 comprimé le matin à jeun'],
+      ['reason', 'Indication', 'text', ''],
+      ['prescriber', 'Prescrit par', 'text', ''],
+      ['end', 'Date de fin (vide si en cours)', 'date', ''],
+    ]},
+    allergy:{add:'Ajouter une allergie', title:'Allergène ou substance', example:'Pénicilline, arachide, latex…', date:'Connue depuis (ou date de saisie)', fields:[
+      ['reaction', 'Réaction observée', 'text', 'Urticaire, œdème, gêne respiratoire…'],
+      ['severity', 'Gravité', {'':'Non précisée', mild:'Légère', moderate:'Modérée', severe:'Sévère'}, ''],
+    ]},
+    history:{add:'Ajouter un antécédent', title:'Antécédent', example:'Appendicectomie, asthme, diabète du père…', date:'Date ou année (approximative si besoin)', fields:[
+      ['category', 'Nature', {'':'Non précisée', medical:'Médical', surgical:'Chirurgical', family:'Familial'}, ''],
+    ]},
+  }
+
+  const pad = value => String(value).padStart(2, '0')
+  const today = (now = new Date()) => now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate())
+  function addDays(date, days) {
+    const moved = new Date(date + 'T12:00:00Z')
+    moved.setUTCDate(moved.getUTCDate() + days)
+    return moved.toISOString().slice(0, 10)
+  }
+
+  // Valeur lisible d'un champ de fiche : libellé pour une liste, texte tel quel sinon.
+  function fieldText(kind, key, value) {
+    const type = forms[kind]?.fields.find(field => field[0] === key)?.[2]
+    return type && typeof type === 'object' ? type[value] ?? value : value
+  }
+
+  const ongoing = (record, day = today()) => record.kind === 'treatment' && (!record.fields.end || record.fields.end >= day)
+
+  // Une ligne par vaccin : dernière injection connue et état de son prochain rappel
+  // ('overdue' dépassé, 'soon' dans les `soonDays` jours, 'planned' plus tard, 'none' non renseigné).
+  function vaccinations(records, day = today(), soonDays = 90) {
+    const groups = new Map()
+    for (const record of records) {
+      if (record.kind !== 'vaccine') continue
+      const name = (record.fields.vaccine || record.title).trim()
+      const key = Lab.fold(name)
+      const group = groups.get(key) ?? {key, name, last:record, count:0}
+      group.count++
+      if (record.date >= group.last.date) {
+        group.last = record
+        group.name = name
+      }
+      groups.set(key, group)
+    }
+    const rank = {overdue:0, soon:1, planned:2, none:3}
+    return [...groups.values()].map(group => {
+      const booster = group.last.fields.booster || ''
+      const status = !booster ? 'none' : booster < day ? 'overdue' : booster <= addDays(day, soonDays) ? 'soon' : 'planned'
+      return {...group, booster, status}
+    }).sort((a, b) => rank[a.status] - rank[b.status] || a.booster.localeCompare(b.booster) || a.name.localeCompare(b.name, 'fr'))
+  }
+
+  globalThis.Dossier = {forms, today, addDays, fieldText, ongoing, vaccinations}
 })()
 
 ;
@@ -1879,7 +1988,7 @@ dialog::backdrop { background: #0d201fb3; }
       if (item.dataset.nav === route) item.setAttribute('aria-current', 'page')
       else item.removeAttribute('aria-current')
     }
-    const render = {home:renderHome, labs:renderLabs, tracking:renderTracking, docs:renderDocuments, vault:renderVault}[route]
+    const render = {home:renderHome, profile:renderProfile, labs:renderLabs, tracking:renderTracking, docs:renderTimeline, vault:renderVault}[route]
     render()
     refreshStatus()
   }
@@ -1907,22 +2016,52 @@ dialog::backdrop { background: #0d201fb3; }
     return button('Télécharger une copie chiffrée', () => { void save({copy:true, forceDownload:true}) })
   }
 
-  function listRecords(records, placeholder) {
-    if (!records.length) return empty(placeholder)
+  // Liste cliquable : chaque ligne {id, title, detail, aside, date, warn} ouvre la fiche du document `id`.
+  function entryList(rows, placeholder) {
+    if (!rows.length) return empty(placeholder)
     const list = el('ul', 'entry-list')
-    for (const entry of records) {
-      const row = button('', () => openRecord(entry.id), 'entry')
+    for (const item of rows) {
+      const row = button('', () => openRecord(item.id), 'entry')
       const title = el('span')
-      title.append(el('span', '', entry.title), el('span', 'muted small', describe(entry) +
-        (entry.results.length ? ' · ' + entry.results.length + ' résultat' + (entry.results.length === 1 ? '' : 's') : '')))
-      const time = el('time', '', formatDate(entry.date))
-      time.dateTime = entry.date
-      row.append(title, time)
+      title.append(el('span', '', item.title))
+      if (item.detail) title.append(el('span', 'muted small', item.detail))
+      const aside = el(item.date ? 'time' : 'span', item.warn ? 'entry-aside entry-warn' : 'entry-aside', item.aside || '')
+      if (item.date) aside.dateTime = item.date
+      row.append(title, aside)
       const li = el('li')
       li.append(row)
       list.append(li)
     }
     return list
+  }
+
+  // L'essentiel d'une fiche en une ligne, pour les listes.
+  function summaryOf(record) {
+    const fields = record.fields
+    if (record.kind === 'vaccine') return fields.vaccine || ''
+    if (record.kind === 'treatment') return [fields.dose, fields.end ? 'jusqu’au ' + formatDate(fields.end) : 'en cours'].filter(Boolean).join(' · ')
+    if (record.kind === 'allergy') {
+      return [fields.reaction, fields.severity && 'gravité ' + Dossier.fieldText('allergy', 'severity', fields.severity).toLowerCase()].filter(Boolean).join(' · ')
+    }
+    if (record.kind === 'history') return fields.category ? Dossier.fieldText('history', 'category', fields.category) : ''
+    return ''
+  }
+
+  function listRecords(records, placeholder) {
+    return entryList(records.map(entry => ({
+      id:entry.id, title:entry.title, date:entry.date, aside:formatDate(entry.date),
+      detail:[describe(entry), summaryOf(entry),
+        entry.results.length ? entry.results.length + ' résultat' + (entry.results.length === 1 ? '' : 's') : ''].filter(Boolean).join(' · '),
+    })), placeholder)
+  }
+
+  function vaccineRow(item) {
+    return {
+      id:item.last.id, title:item.name, warn:item.status === 'overdue',
+      detail:'Dernière injection le ' + formatDate(item.last.date) + (item.count > 1 ? ' · ' + item.count + ' injections notées' : ''),
+      aside:item.status === 'none' ? 'Pas de rappel noté' :
+        'Rappel le ' + formatDate(item.booster) + (item.status === 'overdue' ? ', date dépassée' : ''),
+    }
   }
 
   function allGroups() {
@@ -1954,15 +2093,68 @@ dialog::backdrop { background: #0d201fb3; }
     intro.append(el('h2', '', 'Ajouter un bilan biologique'), el('p', 'muted', 'Importe un PDF Cerballiance ou Check-Up, puis vérifie les résultats proposés.'))
     banner.append(intro, button('Importer un bilan', () => openEditor('bio'), 'primary'))
     const stats = el('div', 'grid-stats')
-    for (const [value, label] of [[records.length, 'Documents'], [records.filter(item => item.kind === 'bio').length, 'Bilans'], [allGroups().size, 'Paramètres suivis']]) {
+    for (const [value, label] of [[records.length, 'Éléments au dossier'], [records.filter(item => item.kind === 'bio').length, 'Bilans'], [allGroups().size, 'Paramètres suivis']]) {
       const card = el('div', 'card')
       card.append(el('strong', '', String(value)), el('span', 'muted', label))
       stats.append(card)
     }
+    const panels = el('div', 'stack')
+    const due = Dossier.vaccinations(session.records).filter(item => item.status === 'overdue' || item.status === 'soon')
+    if (due.length) {
+      const reminders = el('section', 'panel')
+      section(reminders, 'Rappels de vaccination', button('Voir la fiche santé', () => show('profile')))
+      reminders.append(entryList(due.map(vaccineRow), ''))
+      panels.append(reminders)
+    }
     const recent = el('section', 'panel')
-    section(recent, 'Documents récents', button('Ajouter un document', () => openEditor('other')))
+    section(recent, 'Éléments récents', button('Ajouter un document', () => openEditor('other')))
     recent.append(listRecords(records.slice(0, 6), 'Tes documents s’afficheront ici dès le premier ajout.'))
-    $('view').replaceChildren(head, banner, stats, recent)
+    panels.append(recent)
+    $('view').replaceChildren(head, banner, stats, panels)
+  }
+
+  function renderProfile() {
+    const day = Dossier.today()
+    const head = pageHeader('Fiche santé', 'L’essentiel à avoir sous la main : allergies, traitements, vaccinations et antécédents.')
+    const of = kind => session.records.filter(record => record.kind === kind).sort(chronological)
+    const panel = (title, kind, ...content) => {
+      const block = el('section', 'panel')
+      section(block, title, button(Dossier.forms[kind].add, () => openEditor(kind)))
+      block.append(...content)
+      return block
+    }
+
+    const allergies = entryList(of('allergy').map(record => ({
+      id:record.id, title:record.title, detail:record.fields.reaction || '', warn:record.fields.severity === 'severe',
+      aside:record.fields.severity ? Dossier.fieldText('allergy', 'severity', record.fields.severity) : '',
+    })), 'Aucune allergie notée.')
+
+    const treatments = of('treatment')
+    const current = treatments.filter(record => Dossier.ongoing(record, day))
+    const ended = treatments.filter(record => !Dossier.ongoing(record, day))
+    const treatmentRow = record => ({
+      id:record.id, title:record.title, detail:[record.fields.dose, record.fields.reason].filter(Boolean).join(' · '),
+      aside:record.fields.end ? 'du ' + formatDate(record.date) + ' au ' + formatDate(record.fields.end) :
+        (record.date > day ? 'à partir du ' : 'depuis le ') + formatDate(record.date),
+    })
+    const treatmentBlocks = [entryList(current.map(treatmentRow), 'Aucun traitement en cours.')]
+    if (ended.length) {
+      const past = el('details')
+      past.append(el('summary', '', 'Traitements terminés · ' + ended.length), entryList(ended.map(treatmentRow), ''))
+      treatmentBlocks.push(past)
+    }
+
+    const vaccines = entryList(Dossier.vaccinations(session.records, day).map(vaccineRow), 'Aucune vaccination notée.')
+
+    const history = entryList(of('history').map(record => ({
+      id:record.id, title:record.title, date:record.date, aside:formatDate(record.date),
+      detail:record.fields.category ? Dossier.fieldText('history', 'category', record.fields.category) : '',
+    })), 'Aucun antécédent noté.')
+
+    const grid = el('div', 'profile-grid')
+    grid.append(panel('Allergies', 'allergy', allergies), panel('Traitements en cours', 'treatment', ...treatmentBlocks),
+      panel('Vaccinations', 'vaccine', vaccines), panel('Antécédents', 'history', history))
+    $('view').replaceChildren(head, grid)
   }
 
   function inputField(label, input) {
@@ -1971,25 +2163,37 @@ dialog::backdrop { background: #0d201fb3; }
     return wrapper
   }
 
-  function renderDocuments() {
-    const head = pageHeader('Documents', 'Retrouve tes originaux et notes par date ou par type.',
+  // Tout le dossier dans l'ordre du temps, année par année.
+  function renderTimeline() {
+    const head = pageHeader('Chronologie', 'Tout le dossier dans l’ordre du temps : documents, bilans, traitements, vaccinations.',
       button('Ajouter un document', () => openEditor('other'), 'primary'))
     const panel = el('section', 'panel')
     const controls = el('div', 'filter-bar')
     const search = el('input')
     search.type = 'search'
-    search.placeholder = 'Titre, laboratoire, note…'
+    search.placeholder = 'Titre, laboratoire, traitement, note…'
     const type = el('select')
     type.append(option('', 'Tous les types'))
     for (const [key, label] of Object.entries(Coffre.types)) type.add(option(key, label))
-    controls.append(inputField('Rechercher', search), inputField('Type de document', type))
+    controls.append(inputField('Rechercher', search), inputField('Type d’élément', type))
     const list = el('div')
     function filter() {
       const query = Lab.fold(search.value)
       const records = session.records.filter(item => (!type.value || item.kind === type.value) &&
-        (!query || Lab.fold([item.title, item.notes, describe(item), item.file?.name].join(' ')).includes(query)))
+        (!query || Lab.fold([item.title, item.notes, describe(item), summaryOf(item), item.file?.name, ...Object.values(item.fields)].join(' ')).includes(query)))
         .sort(chronological)
-      list.replaceChildren(listRecords(records, 'Aucun document ne correspond à cette recherche.'))
+      list.replaceChildren()
+      if (!records.length) {
+        list.append(empty('Aucun élément ne correspond à cette recherche.'))
+        return
+      }
+      const years = new Map()
+      for (const record of records) {
+        const year = record.date.slice(0, 4)
+        if (!years.has(year)) years.set(year, [])
+        years.get(year).push(record)
+      }
+      for (const [year, group] of years) list.append(el('h2', 'year-head', year), listRecords(group, ''))
     }
     search.addEventListener('input', filter)
     type.addEventListener('change', filter)
@@ -2478,6 +2682,15 @@ dialog::backdrop { background: #0d201fb3; }
     const body = $('record-body')
     body.replaceChildren(badges)
     if (record.file) body.append(el('p', 'muted small', record.file.name + ' · ' + formatBytes(record.file.bytes.length)))
+    const facts = (Dossier.forms[record.kind]?.fields ?? []).filter(([key]) => record.fields[key])
+    if (facts.length) {
+      const list = el('dl', 'facts')
+      for (const [key, label, type] of facts) {
+        list.append(el('dt', '', label.replace(/ \(.*\)$/, '')),
+          el('dd', '', type === 'date' ? formatDate(record.fields[key]) : Dossier.fieldText(record.kind, key, record.fields[key])))
+      }
+      body.append(list)
+    }
     if (record.notes) body.append(el('h3', '', 'Notes personnelles'), el('p', 'detail-notes', record.notes))
     const paged = Boolean(record.file) && Coffre.isPDF(record.file.bytes)
     const viewable = paged || (Boolean(record.file) && Coffre.isImage(record.file.bytes))
@@ -2648,10 +2861,33 @@ dialog::backdrop { background: #0d201fb3; }
     }, 200)
   }).observe($('viewer-page'))
 
-  function syncEditorKind() {
-    const biology = $('doc-kind').value === 'bio'
+  // Adapte l'éditeur au type choisi : libellés du titre et de la date, champs propres à la fiche.
+  function syncEditorKind(values = {}) {
+    const kind = $('doc-kind').value
+    const biology = kind === 'bio'
+    const form = Dossier.forms[kind]
     $('lab-fields').hidden = !biology
-    $('doc-date-label').textContent = biology ? 'Date du prélèvement' : 'Date du document'
+    $('doc-title-label').textContent = form?.title ?? 'Titre'
+    $('doc-title').placeholder = form?.example ?? 'Bilan du 12 mars, ordonnance, consultation…'
+    $('doc-date-label').textContent = biology ? 'Date du prélèvement' : form?.date ?? 'Date du document'
+    const extra = $('extra-fields')
+    extra.hidden = !form
+    extra.replaceChildren(...(form?.fields ?? []).map(([key, label, type, example]) => {
+      const input = el(typeof type === 'object' ? 'select' : 'input')
+      input.dataset.extra = key
+      if (typeof type === 'object') {
+        for (const [value, text] of Object.entries(type)) input.add(option(value, text))
+      } else if (type === 'date') {
+        input.type = 'date'
+        input.min = '1900-01-01'
+        input.max = '2199-12-31'
+      } else {
+        input.maxLength = Coffre.fieldRules[kind][key]
+        if (example) input.placeholder = example
+      }
+      input.value = values[key] ?? ''
+      return inputField(label, input)
+    }))
     updateAttachmentUI()
   }
 
@@ -2661,6 +2897,7 @@ dialog::backdrop { background: #0d201fb3; }
     $('attachment-name').textContent = ''
     $('editor-title').textContent = ''
     $('result-editor').replaceChildren()
+    $('extra-fields').replaceChildren()
     notice('editor-message')
     notice('import-message')
   }
@@ -2668,18 +2905,21 @@ dialog::backdrop { background: #0d201fb3; }
   function openEditor(kind, existing = null) {
     if (busy || !session) return
     clearEditor()
-    draft = {id:existing?.id, file:existing?.file ?? null, proposed:false, changed:false, loading:false, kindChosen:Boolean(existing)}
-    $('editor-title').textContent = existing ? 'Modifier le document' : kind === 'bio' ? 'Importer un bilan' : 'Ajouter un document'
+    const form = Dossier.forms[kind]
+    // Une fiche ouverte depuis la fiche santé garde son type, même si un PDF de bilan y est joint.
+    draft = {id:existing?.id, file:existing?.file ?? null, proposed:false, changed:false, loading:false, kindChosen:Boolean(existing || form)}
+    $('editor-title').textContent = existing ? (form ? 'Modifier la fiche' : 'Modifier le document') :
+      kind === 'bio' ? 'Importer un bilan' : form?.add ?? 'Ajouter un document'
     $('editor-submit').textContent = existing ? 'Appliquer les modifications' : 'Ajouter au dossier'
     $('editor-submit').disabled = false
     $('doc-title').value = existing?.title ?? ''
     $('doc-kind').value = kind
-    $('doc-date').value = existing?.date ?? ''
+    $('doc-date').value = existing?.date ?? (form ? Dossier.today() : '')
     $('doc-notes').value = existing?.notes ?? ''
     $('doc-lab').value = existing?.lab || 'auto'
     $('confirm-results').hidden = true
     for (const item of existing?.results ?? []) addResult(item)
-    syncEditorKind()
+    syncEditorKind(existing?.fields)
     $('editor').showModal()
   }
   $('editor').addEventListener('cancel', event => {
@@ -2934,7 +3174,11 @@ dialog::backdrop { background: #0d201fb3; }
       if (existingBytes + (draft.file?.bytes.length ?? 0) >= Coffre.MAX_VAULT - 200000) {
         throw Error('Ce document dépasserait la capacité du coffre de 150 Mo.')
       }
-      const record = {id:draft.id || crypto.randomUUID(), title, kind, lab, date, notes:$('doc-notes').value.trim(), file:draft.file, results}
+      const fields = Object.fromEntries(Array.from($('extra-fields').querySelectorAll('[data-extra]'),
+        input => [input.dataset.extra, input.value.trim()]).filter(([, value]) => value))
+      if (kind === 'treatment' && fields.end && fields.end < date) throw Error('La date de fin du traitement précède sa date de début.')
+      if (kind === 'vaccine' && fields.booster && fields.booster <= date) throw Error('Le prochain rappel doit être postérieur à la date de l’injection.')
+      const record = {id:draft.id || crypto.randomUUID(), title, kind, lab, date, notes:$('doc-notes').value.trim(), fields, file:draft.file, results}
       try {
         Coffre.check(record)
       } catch {
@@ -2945,8 +3189,9 @@ dialog::backdrop { background: #0d201fb3; }
       else session.records.push(record)
       draft.changed = false
       $('editor').close()
-      show(editing ? view : kind === 'bio' ? 'labs' : 'docs')
-      afterChange(editing ? 'Document modifié.' : 'Document ajouté.')
+      show(editing ? view : kind === 'bio' ? 'labs' : Dossier.forms[kind] ? 'profile' : 'docs')
+      const sheet = Boolean(Dossier.forms[kind])
+      afterChange(editing ? (sheet ? 'Fiche modifiée.' : 'Document modifié.') : sheet ? 'Fiche ajoutée.' : 'Document ajouté.')
     } catch (error) {
       notice('editor-message', error.message, 'error')
     }
