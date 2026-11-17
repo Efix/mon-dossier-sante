@@ -1,5 +1,6 @@
 // Prépare le dossier publication/, servi tel quel par l'image Docker (voir deploiement/).
-//   node outils/publier.mjs
+//   node outils/publier.mjs             publie tous les tags et note les nouvelles versions au registre
+//   node outils/publier.mjs --registre  n'accepte que les versions déjà notées (construction de l'image Docker)
 //
 // Chaque version publiée est le HTML d'un tag git « vX.Y.Z », placé à l'adresse /vX.Y.Z/ :
 // le contenu d'une adresse ne change jamais. Son empreinte SHA-256 est notée une fois pour toutes dans
@@ -18,6 +19,8 @@ const sortie = path.join(racine, 'publication')
 const registre = path.join(racine, 'deploiement', 'versions-publiees.txt')
 const nomApplication = path.basename(fileURLToPath(fichier))
 const formatTag = /^v\d+\.\d+\.\d+$/
+// Dans l'image : une version absente du registre commité n'a jamais été validée, elle n'est pas servie.
+const registreSeul = process.argv.includes('--registre')
 
 const git = (...args) => execFileSync('git', args, {cwd: racine, maxBuffer: 256 * 1024 * 1024})
 const sha256 = octets => crypto.createHash('sha256').update(octets).digest('hex')
@@ -60,6 +63,9 @@ for (const tag of tags) {
   if (notee && notee !== empreinte) {
     throw Error(`${tag} a déjà été publiée avec l'empreinte ${notee}, mais le tag donne aujourd'hui ${empreinte}.\n` +
       'Une version publiée ne change jamais : publie une nouvelle version plutôt que de déplacer un tag.')
+  }
+  if (!notee && registreSeul) {
+    throw Error(`${tag} n'est pas notée dans deploiement/versions-publiees.txt : lance « npm run publier » puis commite ce fichier.`)
   }
   if (!notee) nouvelles.push({tag, empreinte})
   versions.push({tag, empreinte, html, date: git('log', '-1', '--format=%cs', tag).toString().trim()})

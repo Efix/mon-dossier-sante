@@ -1,6 +1,10 @@
-# Liste blanche : l'image ne reçoit que la configuration du serveur et les pages publiées.
-# Rien d'autre du dossier (et surtout aucun coffre .sante) n'entre dans le contexte de construction.
+# Liste blanche : seul ce qui sert à construire l'image entre dans le contexte de construction.
+# Rien d'autre du dossier (et surtout aucun coffre .sante) ne peut y entrer par erreur.
+# L'historique git sert à extraire chaque version publiée de son tag ; il ne reste pas dans l'image finale.
 *
+!.git
+!outils/application.mjs
+!outils/publier.mjs
 !deploiement/nginx.conf
 !deploiement/entetes-securite.conf
-!publication/
+!deploiement/versions-publiees.txt

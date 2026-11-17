@@ -52,10 +52,28 @@ La même application peut être servie en ligne, par une image Docker (`deploiem
 - son empreinte SHA-256 est affichée sur la page d'accueil et dans `/SHA256SUMS` : une page enregistrée depuis le site doit avoir exactement cette empreinte, et s'utilise ensuite hors ligne ;
 - `deploiement/versions-publiees.txt` note l'empreinte de chaque version à sa première publication : si un tag déplacé donnait un autre contenu, `npm run publier` refuse.
 
-**Publier une version**, depuis un dépôt propre où `npm run verifier` passe :
+**Installer sur une machine qui a Docker** (ni Node ni npm nécessaires) :
 
 ```bash
-git tag v1.0.0
+git clone https://github.com/Efix/mon-dossier-sante.git
+```
+
+```bash
+cd mon-dossier-sante && docker compose -f deploiement/compose.yaml up -d --build
+```
+
+L'application répond alors sur `http://127.0.0.1:8080`, depuis la machine seulement. Il faut devant elle un proxy inverse en **HTTPS** (Caddy, Traefik, nginx…) : sans HTTPS, le navigateur refuse le chiffrement et l'application reste bloquée.
+
+**Mettre à jour** la machine après la publication d'une nouvelle version :
+
+```bash
+git pull && docker compose -f deploiement/compose.yaml up -d --build
+```
+
+**Publier une version**, sur le poste de développement, depuis un dépôt propre où `npm run verifier` passe :
+
+```bash
+git tag v1.0.1
 ```
 
 ```bash
@@ -63,16 +81,16 @@ npm run publier
 ```
 
 ```bash
-git add deploiement/versions-publiees.txt && git commit -m "Publication v1.0.0"
+git add deploiement/versions-publiees.txt && git commit -m "Publication v1.0.1"
 ```
 
 ```bash
-docker compose -f deploiement/compose.yaml up -d --build
+git push && git push origin v1.0.1
 ```
 
-`npm run publier` reconstruit `publication/` (non versionné) à partir de **tous** les tags `vX.Y.Z` : les anciennes versions restent en ligne à leur adresse, la page d'accueil mène à la plus récente.
+`npm run publier` note l'empreinte de la nouvelle version au registre et prépare `publication/` (non versionné) pour un essai local. L'image, elle, reconstruit ses pages à partir de **tous** les tags `vX.Y.Z` (`publier --registre`) et refuse une version absente du registre ou dont le contenu diffère : les anciennes versions restent en ligne à leur adresse, la page d'accueil mène à la plus récente.
 
-**Le serveur.** nginx sans privilèges, conteneur en lecture seule, sans capacités, méthodes GET et HEAD seulement, en-têtes de sécurité (`deploiement/entetes-securite.conf`), cache définitif sur les versions. Le conteneur écoute sur `127.0.0.1:8080` : il faut devant lui un proxy inverse en **HTTPS** (Caddy, Traefik, nginx…), car sans HTTPS le navigateur refuse le chiffrement et l'application reste bloquée. Le `.dockerignore` n'admet dans l'image que `publication/` et la configuration du serveur : aucun coffre ne peut y entrer par erreur.
+**Le serveur.** nginx sans privilèges, conteneur en lecture seule, sans capacités, méthodes GET et HEAD seulement, en-têtes de sécurité (`deploiement/entetes-securite.conf`), cache définitif sur les versions. L'image finale ne contient que les pages publiées et la configuration du serveur : ni Node, ni git, ni l'historique. Le `.dockerignore` est une liste blanche : aucun coffre `.sante` ne peut entrer dans la construction.
 
 ## Tests
 
