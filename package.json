@@ -1,0 +1,14 @@
+{
+  "name": "mon-dossier-sante",
+  "private": true,
+  "type": "module",
+  "description": "Mon dossier santé : application hors ligne, en un seul fichier HTML, avec coffre chiffré.",
+  "scripts": {
+    "test": "node --test \"tests/*.test.mjs\"",
+    "csp": "node outils/csp.mjs",
+    "verifier": "node outils/csp.mjs --verifier && node --test \"tests/*.test.mjs\""
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
