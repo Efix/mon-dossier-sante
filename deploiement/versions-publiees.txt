@@ -1,0 +1,2 @@
+# Empreinte SHA-256 de chaque version publiée, notée à sa première publication et jamais modifiée.
+ef538fe197d07e119acf9f4960540f5fb82eefd9addbae4fbe7f96de32beab26  v1.0.0
