@@ -120,9 +120,46 @@ test('unités : écritures équivalentes regroupées, unités distinctes sépar�
 test('unités mEq/L et mm/h reconnues', () => {
   const sodium = lire(['CHECK UP LABORATORIO', 'SÓDIO', 'Resultado: 140 mEq/L', 'Data da coleta: 05/02/2026'])
   assert.deepEqual(lignes(sodium), [['SÓDIO', '140', 'mEq/L', '', '', 1]])
-  // La vitesse de sédimentation n'est pas une analyse suivie : sa ligne doit au moins être signalée.
   const vs = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'Vitesse de sédimentation\t8 mm/h'])
-  assert.deepEqual(vs.unknown, ['Vitesse de sédimentation'])
+  assert.deepEqual(lignes(vs), [['Vitesse de sédimentation', '8', 'mm/h', '', '', 1]])
+})
+
+test('analyses rénales, VS et TSH ultra sensible, dans les libellés Cerballiance', () => {
+  const bilan = lire([
+    'Cerballiance', 'Prélevé le 12/03/2026',
+    'VS calculée à une heure\t8 mm\t< 20',
+    'Clairance créatinine estimée selon Cockroft & Gault\t95 mL/min',
+    'DFG calculé selon MDRD\t88 mL/min/1,73 m²',
+    'DFG calculé selon CKD-EPI\t92 mL/min/1,73 m²',
+    'Un DFG < 60 mL/min/1,73 m² pendant plus de 3 mois traduit une maladie rénale chronique.',
+    'TSH ULTRA SENSIBLE\t1,85 mUI/L\t0,40 à 4,00',
+  ])
+  assert.deepEqual(lignes(bilan), [
+    ['VS calculée à une heure', '8', 'mm', '', '', 1],
+    ['Clairance créatinine estimée selon Cockroft & Gault', '95', 'mL/min', '', '', 1],
+    ['DFG calculé selon MDRD', '88', 'mL/min/1,73 m²', '', '', 1],
+    ['DFG calculé selon CKD-EPI', '92', 'mL/min/1,73 m²', '', '', 1],
+    ['TSH ULTRA SENSIBLE', '1,85', 'mUI/L', '0,40 à 4,00', '', 1],
+  ])
+  assert.deepEqual(bilan.unknown, [], 'la phrase « Un DFG < 60… » est un commentaire, pas une analyse')
+  assert.deepEqual(bilan.rows.map(item => Lab.groupFor(item.name)), ['esr', 'crcl', 'egfr-mdrd', 'egfr', 'tsh'],
+    'MDRD et CKD-EPI restent deux séries distinctes')
+})
+
+test('ligne de méthode : la valeur revient à l’analyse nommée juste au-dessus', () => {
+  const bilan = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'HEMATOLOGIE', 'Plaquettes', 'Impédance électrique\t245 G/L\t150 à 400', 'Sodium\t140 mmol/L'])
+  assert.deepEqual(lignes(bilan), [['Plaquettes', '245', 'G/L', '150 à 400', '', 1], ['Sodium', '140', 'mmol/L', '', '', 1]])
+  assert.deepEqual(bilan.unknown, [])
+
+  const seule = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'Impédance électrique\t245 G/L'])
+  assert.deepEqual(lignes(seule), [], 'sans analyse au-dessus, rien n’est deviné')
+  assert.deepEqual(seule.unknown, ['Impédance électrique'])
+
+  const loin = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'Plaquettes', 'Texte libre', 'Autre texte', 'Encore du texte', 'Impédance électrique\t245 G/L'])
+  assert.deepEqual(lignes(loin), [], 'une analyse nommée trop haut n’est pas rattachée')
+
+  const deja = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'Plaquettes\t250 G/L', 'Impédance électrique\t245 G/L'])
+  assert.deepEqual(lignes(deja), [['Plaquettes', '250', 'G/L', '', '', 1]], 'une analyse qui a déjà sa valeur n’en reçoit pas une seconde')
 })
 
 test('lignes non reconnues : signalées au lieu de disparaître', () => {

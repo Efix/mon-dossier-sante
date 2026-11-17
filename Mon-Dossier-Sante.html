@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-gCys18Hb3lyhhug5sh5vRCQhyMoFKlogpgp5Hfnlz6M=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-X0BoDJT/ytRCG3r2dE0DbLtDz1rEfoJDMKb/vT4OC3w=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>Mon dossier santé</title>
@@ -728,7 +728,12 @@ dialog::backdrop { background: #0d201fb3; }
     ['mpv', 'Volume plaquettaire moyen', 'VPM|Volume plaquetário médio'],
     ['crp', 'CRP', 'Proteína C reativa|Protéine C réactive|Protéine C réactive (CRP)|Proteína C reativa (PCR)|PCR'],
     ['creatinine', 'Créatinine', 'Creatinina|Créatinine sérique|Creatinina sérica|Dosagem de creatinina'],
-    ['egfr', 'DFG (CKD-EPI)', 'DFG CKD-EPI|DFG calculé selon la formule CKD-EPI|DFG selon CKD-EPI|DFG CKD-EPI 2021'],
+    ['egfr', 'DFG (CKD-EPI)', 'DFG CKD-EPI|DFG calculé selon la formule CKD-EPI|DFG selon CKD-EPI|DFG CKD-EPI 2021|DFG calculé selon CKD-EPI|DFG calculé selon CKD-EPI 2021'],
+    ['egfr-mdrd', 'DFG (MDRD)', 'DFG MDRD|DFG calculé selon MDRD|DFG calculé selon la formule MDRD|DFG selon MDRD'],
+    ['crcl', 'Clairance de la créatinine (Cockcroft-Gault)', 'Clairance créatinine estimée selon Cockroft & Gault|Clairance créatinine estimée selon Cockcroft & Gault|' +
+      'Clairance de la créatinine selon Cockcroft et Gault|Clairance de la créatinine (Cockcroft)|Clairance de la créatinine Cockcroft-Gault|Clearance de creatinina'],
+    ['esr', 'Vitesse de sédimentation (1re heure)', 'VS calculée à une heure|VS|VS 1re heure|VS 1ère heure|Vitesse de sédimentation|' +
+      'Vitesse de sédimentation 1ère heure|VHS|Velocidade de hemossedimentação'],
     ['urea', 'Urée', 'Ureia|Uréia|Urée sérique|Dosagem de ureia'],
     ['uric', 'Acide urique', 'Ácido úrico|Dosagem de ácido úrico|Uricémie'],
     ['sodium', 'Sodium', 'Sódio|Sodium sérique|Sódio sérico|Na'],
@@ -756,7 +761,7 @@ dialog::backdrop { background: #0d201fb3; }
     ['b9', 'Folates (vitamine B9)', 'Folates|Vitamine B9|Ácido fólico|Folato sérico|Folato'],
     ['b12', 'Vitamine B12', 'Vitamina B12|Cobalamina|Cobalamine'],
     ['d25', 'Vitamine D (25-OH)', '25 OH vitamine D|25 OH vitamina D|Vitamina D 25 OH|25 hidroxivitamina D|25 hydroxyvitamine D|Vitamine D totale (D2+D3)'],
-    ['tsh', 'TSH', 'T.S.H.|TSH ultrasensible|TSH ultra sensível|Tireoestimulante, hormônio (TSH)|Hormônio tireoestimulante'],
+    ['tsh', 'TSH', 'T.S.H.|TSH ultrasensible|TSH ultra sensible|TSH ultra-sensible|TSH ultra sensível|Tireoestimulante, hormônio (TSH)|Hormônio tireoestimulante'],
     ['ft4', 'T4 libre', 'T4L|T4 livre|Tiroxina livre|Thyroxine libre (T4L)'],
     ['ft3', 'T3 libre', 'T3L|T3 livre|Triiodotironina livre|Triiodothyronine libre (T3L)'],
     ['hcv', 'Hépatite C (anticorps anti-VHC)', 'Hepatite C - Anti-HCV|Anticorps anti-VHC'],
@@ -793,6 +798,7 @@ dialog::backdrop { background: #0d201fb3; }
     'm?Eq\\s*/\\s*(?:mL|dL|L)',
     'mm\\s*/\\s*(?:1\\s*)?h(?:ora|eure)?',
     'fL|pg|%|segundos?|s',
+    'mm',
   ].join('|')
   const measurePattern = new RegExp('(^|[\\s:])(' + number + ')\\s*(' + unit + ')(?=$|[\\s*()\\[\\]:])', 'gi')
   const numberCell = new RegExp('^' + number + '$')
@@ -878,11 +884,14 @@ dialog::backdrop { background: #0d201fb3; }
   }
 
   // Lignes « libellé + valeur » dont le libellé est inconnu : signalées à l'import au lieu de disparaître.
-  const notAName = /^(?:soit|ou|et|valeurs?|valor(?:es)?|referenc|risque|risco|objectif|cible|seuil|normal|interpretation|resultado|adult|homens|mulheres|crianca|desejavel|otimo|limitrofe|alto|baixo|ate|acima|inferior|superior|si|pour|en|de)(?: |$)/
+  const notAName = /^(?:soit|ou|et|valeurs?|valor(?:es)?|referenc|risque|risco|objectif|cible|seuil|normal|interpretation|resultado|adult|homens|mulheres|crianca|desejavel|otimo|limitrofe|alto|baixo|ate|acima|inferior|superior|si|pour|en|de|un|une|le|la|les|des|du|au|aux|chez|dans|avec|sans|selon|ce|cet|cette|il|elle|on|nous|vous)(?: |$)/
   const noteUnknown = (unknown, label) => {
     const key = fold(label)
     if (label.length <= 80 && /\p{L}{3}/u.test(label) && !notAName.test(key) && unknown.size < 200) unknown.set(key, label)
   }
+
+  // Libellés de technique d'analyse : jamais une analyse, parfois la ligne qui porte la valeur.
+  const methodLine = /^(?:impedance|photometrie|cytometrie|colorimetrie|spectrophotometrie|turbidimetrie|immunoturbidimetrie|nephelometrie|enzymatique|chimiluminescence|electrochimiluminescence|potentiometrie|electrode|methode|technique)(?: |$)/
 
   function parseCerballiance(pages) {
     const rows = []
@@ -895,6 +904,8 @@ dialog::backdrop { background: #0d201fb3; }
     for (const {number:page, lines} of pages) {
       let previous = null
       let last = -10
+      // Analyse nommée sans valeur sur sa ligne : sa valeur peut figurer sur la ligne de méthode suivante.
+      let awaiting = null
       for (const [index, raw] of lines.entries()) {
         const line = clean(raw)
         const date = dateISO(accentless(line).match(collectionFR)?.[1])
@@ -916,6 +927,14 @@ dialog::backdrop { background: #0d201fb3; }
           continue
         }
         const label = first ? labelText(line.slice(0, first.start)) : labelText(line.split(/\t| {2,}/)[0])
+        if (!keyFor(label) && first?.start && awaiting && index - awaiting.index <= 3 && methodLine.test(fold(label))) {
+          const candidate = row(awaiting.label, first, page, referenceFR(line.slice(first.end)))
+          rows.push(candidate)
+          previous = candidate
+          last = index
+          awaiting = null
+          continue
+        }
         if (!keyFor(label)) {
           if (first?.start) noteUnknown(unknown, label)
           if (line.startsWith('✔') || line.startsWith('✓')) previous = null
@@ -930,9 +949,12 @@ dialog::backdrop { background: #0d201fb3; }
           rows.push(candidate)
           previous = candidate
           last = index
+          awaiting = null
         } else if (keyFor(label) === 'fib4') {
           const cell = line.split(/\t| {2,}/)[1]?.trim()
           if (cell && numberCell.test(cell)) rows.push(row(label, {value:cell, unit:''}, page))
+        } else {
+          awaiting = {label, index}
         }
       }
     }
