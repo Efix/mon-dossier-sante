@@ -116,3 +116,14 @@ test('noms de fichiers : caractères dangereux neutralisés', () => {
   assert.equal(Coffre.isPDF(new TextEncoder().encode('%PDF-1.7')), true)
   assert.equal(Coffre.isPDF(new TextEncoder().encode('PK\u0003\u0004')), false)
 })
+
+test('images affichables reconnues à leur signature, pas à leur extension', () => {
+  const debut = (...octets) => Uint8Array.from([...octets, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+  assert.equal(Coffre.isImage(debut(0xff, 0xd8, 0xff, 0xe0)), true, 'JPEG')
+  assert.equal(Coffre.isImage(debut(0x89, 0x50, 0x4e, 0x47)), true, 'PNG')
+  assert.equal(Coffre.isImage(debut(0x47, 0x49, 0x46, 0x38)), true, 'GIF')
+  assert.equal(Coffre.isImage(Uint8Array.from([0x52, 0x49, 0x46, 0x46, 1, 2, 3, 4, 0x57, 0x45, 0x42, 0x50])), true, 'WebP')
+  assert.equal(Coffre.isImage(new TextEncoder().encode('%PDF-1.7 ...')), false)
+  assert.equal(Coffre.isImage(new TextEncoder().encode('<svg xmlns="http://www.w3.org/2000/svg">')), false, 'SVG exclu')
+  assert.equal(Coffre.isImage(new Uint8Array(2)), false)
+})
