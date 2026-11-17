@@ -1,0 +1,8 @@
+# Le coffre contient des données de santé : même chiffré, il ne va jamais dans le dépôt.
+*.sante
+
+# Copies manuelles d'avant le dépôt, remplacées par l'historique git.
+anciennes-versions/
+
+node_modules/
+.claude/

@@ -1,0 +1,7 @@
+# Fins de ligne LF partout, y compris sous Windows.
+* text=auto eol=lf
+
+# Aucune conversion sur l'application : l'empreinte CSP porte sur le script à l'octet près,
+# et un passage en CRLF rendrait la page inerte.
+*.html -text
+*.sante binary
