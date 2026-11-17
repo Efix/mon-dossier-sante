@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-X0BoDJT/ytRCG3r2dE0DbLtDz1rEfoJDMKb/vT4OC3w=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-eKOiUBjKnuRq6lLE3R2h7d08BRNzyL9sNa3UFNUT6VA=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>Mon dossier santé</title>
@@ -761,6 +761,9 @@ dialog::backdrop { background: #0d201fb3; }
     ['b9', 'Folates (vitamine B9)', 'Folates|Vitamine B9|Ácido fólico|Folato sérico|Folato'],
     ['b12', 'Vitamine B12', 'Vitamina B12|Cobalamina|Cobalamine'],
     ['d25', 'Vitamine D (25-OH)', '25 OH vitamine D|25 OH vitamina D|Vitamina D 25 OH|25 hidroxivitamina D|25 hydroxyvitamine D|Vitamine D totale (D2+D3)'],
+    ['testosterone', 'Testostérone totale', 'Testostérone|Testostérone sérique|Testosterona|Testosterona total|Testosterona total sérica'],
+    ['testosterone-free', 'Testostérone libre', 'Testosterona livre'],
+    ['testosterone-bio', 'Testostérone biodisponible', 'Testosterona biodisponível'],
     ['tsh', 'TSH', 'T.S.H.|TSH ultrasensible|TSH ultra sensible|TSH ultra-sensible|TSH ultra sensível|Tireoestimulante, hormônio (TSH)|Hormônio tireoestimulante'],
     ['ft4', 'T4 libre', 'T4L|T4 livre|Tiroxina livre|Thyroxine libre (T4L)'],
     ['ft3', 'T3 libre', 'T3L|T3 livre|Triiodotironina livre|Triiodothyronine libre (T3L)'],
@@ -897,7 +900,7 @@ dialog::backdrop { background: #0d201fb3; }
     const rows = []
     const dates = new Set()
     const unknown = new Map()
-    const secondUnits = new Set(['creatinine','fasting','glucose','cholesterol','hdl','ldl','nonhdl','triglycerides','b9','b12','ft4','d25'])
+    const secondUnits = new Set(['creatinine','fasting','glucose','cholesterol','hdl','ldl','nonhdl','triglycerides','b9','b12','ft4','d25','testosterone'])
     // Une section d'urines peut se poursuivre sur la page suivante : l'état survit au saut de page.
     let urine = false
     let urineSkipped = 0

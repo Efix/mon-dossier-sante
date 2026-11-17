@@ -146,6 +146,21 @@ test('analyses rénales, VS et TSH ultra sensible, dans les libellés Cerballian
     'MDRD et CKD-EPI restent deux séries distinctes')
 })
 
+test('testostérone : totale, libre et biodisponible restent trois séries ; seconde unité reprise', () => {
+  const fr = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'HORMONOLOGIE',
+    'TESTOSTERONE\t5,20 ng/mL\t2,49 à 8,36', '\t18,0 nmol/L\t8,64 à 29,0', 'Testostérone libre\t95 pg/mL'])
+  assert.deepEqual(lignes(fr), [
+    ['TESTOSTERONE', '5,20', 'ng/mL', '2,49 à 8,36', '', 1],
+    ['TESTOSTERONE', '18,0', 'nmol/L', '8,64 à 29,0', '', 1],
+    ['Testostérone libre', '95', 'pg/mL', '', '', 1],
+  ])
+  assert.deepEqual(fr.unknown, [])
+  assert.deepEqual(fr.rows.map(item => Lab.groupFor(item.name)), ['testosterone', 'testosterone', 'testosterone-free'])
+
+  const br = lire(['CHECK UP LABORATORIO', 'TESTOSTERONA TOTAL', 'Resultado: 520 ng/dL', 'Data da coleta: 05/02/2026'])
+  assert.deepEqual(lignes(br), [['TESTOSTERONA TOTAL', '520', 'ng/dL', '', '', 1]])
+})
+
 test('ligne de méthode : la valeur revient à l’analyse nommée juste au-dessus', () => {
   const bilan = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'HEMATOLOGIE', 'Plaquettes', 'Impédance électrique\t245 G/L\t150 à 400', 'Sodium\t140 mmol/L'])
   assert.deepEqual(lignes(bilan), [['Plaquettes', '245', 'G/L', '150 à 400', '', 1], ['Sodium', '140', 'mmol/L', '', '', 1]])
