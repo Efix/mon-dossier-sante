@@ -237,15 +237,28 @@
           return
         }
       }
-      if (biology) acceptProposals(Lab.parse(pages, $('doc-lab').value))
-      else acceptReport(CompteRendu.read(pages), detectKind)
+      if (biology) {
+        const proposed = Lab.parse(pages, $('doc-lab').value)
+        // « Importer un bilan » avec un compte rendu d'imagerie ou de consultation : le type suit le document.
+        const report = !active.kindChosen && !proposed.rows.length ? CompteRendu.read(pages) : null
+        if (report?.kind) {
+          notice('import-message')
+          $('doc-kind').value = report.kind
+          syncEditorKind()
+          acceptReport(report, true, 'Ce PDF n’est pas un bilan de laboratoire : classé en « ' + Coffre.types[report.kind] + ' ». ')
+        } else {
+          acceptProposals(proposed)
+        }
+      } else {
+        acceptReport(CompteRendu.read(pages), detectKind)
+      }
     } catch (error) {
       if (draft === active && !detectKind) notice(message, error.message, 'warn')
     }
   }
 
   // Ne remplace jamais une saisie : seuls les champs vides, ou encore égaux à ce qui a été proposé, sont remplis.
-  function acceptReport(report, detectKind) {
+  function acceptReport(report, detectKind, prefix = '') {
     if (!report) {
       notice('report-message', detectKind ? '' : 'Aucun élément reconnu dans ce document : complète les champs à la main.', 'warn')
       return
@@ -270,9 +283,9 @@
     }
     if (filled.length) {
       draft.changed = true
-      notice('report-message', 'Repris du compte rendu : ' + filled.join(', ') + '. Vérifie avec l’original.')
+      notice('report-message', prefix + 'Repris du compte rendu : ' + filled.join(', ') + '. Vérifie avec l’original.')
     } else {
-      notice('report-message', detectKind ? '' : 'Rien de nouveau : les champs déjà remplis sont conservés.')
+      notice('report-message', prefix || (detectKind ? '' : 'Rien de nouveau : les champs déjà remplis sont conservés.'))
     }
   }
 
