@@ -1,7 +1,8 @@
 #!/bin/sh
-# Refuse un commit dont l'empreinte CSP est périmée : l'application ne démarrerait plus.
+# Refuse un commit dont le HTML livré ne correspond plus aux sources de src/ :
+# l'application ouverte ne serait pas celle du code commité, ou ne démarrerait plus.
 if ! command -v node >/dev/null 2>&1; then
-  echo "pre-commit : node introuvable, empreinte CSP non vérifiée." >&2
+  echo "pre-commit : node introuvable, assemblage non vérifié." >&2
   exit 0
 fi
-exec node outils/csp.mjs --verifier
+exec node outils/assembler.mjs --verifier

@@ -5,3 +5,6 @@
 # et un passage en CRLF rendrait la page inerte.
 *.html -text
 *.sante binary
+
+# PDF.js gardé octet pour octet tel que publié (il contient des CRLF) : un test vérifie son empreinte.
+src/vendor/** -text

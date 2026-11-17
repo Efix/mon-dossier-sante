@@ -1,10 +1,11 @@
-// Charge les modules de l'application directement depuis le fichier HTML livré :
-// les tests portent sur le code réellement exécuté dans le navigateur, sans copie intermédiaire.
+// Charge les modules de l'application depuis les sources de src/ : les tests portent sur le code
+// tel qu'il est écrit, et fichier.test.mjs vérifie que le HTML livré en est bien l'assemblage.
 import fs from 'node:fs'
 import crypto from 'node:crypto'
 import vm from 'node:vm'
 
 import {fichier} from '../outils/application.mjs'
+import {lireSource} from '../outils/assembler.mjs'
 
 export {fichier}
 
@@ -17,13 +18,10 @@ export function lireApplication() {
 }
 
 let modules
-// Les trois premiers modules du script (lecture des bilans, coffre chiffré, fiches) n'ont pas besoin du navigateur.
+// Les trois premiers modules (lecture des bilans, coffre chiffré, fiches) n'ont pas besoin du navigateur.
 export function charger() {
   if (!modules) {
-    const [lab, coffre, dossier] = lireApplication().scripts[0].split(/\n;\n/)
-    vm.runInThisContext(lab, {filename:'Lab (lecture des bilans)'})
-    vm.runInThisContext(coffre, {filename:'Coffre (chiffrement)'})
-    vm.runInThisContext(dossier, {filename:'Dossier (fiches et rappels)'})
+    for (const nom of ['js/lab.js', 'js/coffre.js', 'js/dossier.js']) vm.runInThisContext(lireSource(nom), {filename: 'src/' + nom})
     modules = {Lab:globalThis.Lab, Coffre:globalThis.Coffre, Dossier:globalThis.Dossier}
   }
   return modules
