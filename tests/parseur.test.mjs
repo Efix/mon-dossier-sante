@@ -161,6 +161,20 @@ test('testostérone : totale, libre et biodisponible restent trois séries ; sec
   assert.deepEqual(lignes(br), [['TESTOSTERONA TOTAL', '520', 'ng/dL', '', '', 1]])
 })
 
+test('anticorps anti-thyroïdiens : deux séries, valeurs bornées conservées telles quelles', () => {
+  const bilan = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'IMMUNOLOGIE',
+    'ANTICORPS ANTI-THYROPEROXYDASE (ATPO)\t12 UI/mL\t(< 34)',
+    'ANTICORPS ANTI-THYROGLOBULINE (ATG)\t< 10 UI/mL\t(< 115)'])
+  assert.deepEqual(lignes(bilan), [
+    ['ANTICORPS ANTI-THYROPEROXYDASE (ATPO)', '12', 'UI/mL', '(< 34)', '', 1],
+    ['ANTICORPS ANTI-THYROGLOBULINE (ATG)', '< 10', 'UI/mL', '(< 115)', '', 1],
+  ])
+  assert.deepEqual(bilan.unknown, [])
+  assert.deepEqual(bilan.rows.map(item => Lab.groupFor(item.name)), ['atpo', 'atg'])
+  assert.equal(Lab.judge('12', 'cerballiance', 'UI/mL', '(< 34)'), 'in')
+  assert.equal(Lab.judge('< 10', 'cerballiance', 'UI/mL', '(< 115)'), null, 'une valeur bornée n’est pas jugée')
+})
+
 test('ligne de méthode : la valeur revient à l’analyse nommée juste au-dessus', () => {
   const bilan = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'HEMATOLOGIE', 'Plaquettes', 'Impédance électrique\t245 G/L\t150 à 400', 'Sodium\t140 mmol/L'])
   assert.deepEqual(lignes(bilan), [['Plaquettes', '245', 'G/L', '150 à 400', '', 1], ['Sodium', '140', 'mmol/L', '', '', 1]])
