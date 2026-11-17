@@ -41,6 +41,38 @@ npm test
 
 Un crochet `pre-commit` refuse un commit dont le HTML ne correspond plus aux sources. Sur un nouveau clone, il s'active avec `git config core.hooksPath .githooks`. Les noms du fichier livré et du dossier des sources sont définis une seule fois, dans `outils/application.mjs`.
 
+## Version web
+
+La même application peut être servie en ligne, par une image Docker (`deploiement/`). Le serveur n'envoie que la page : le coffre reste sur l'appareil de la personne, et la page s'interdit toute connexion réseau.
+
+**Ce qu'il faut savoir.** En local, le code ne change que si tu changes le fichier. En ligne, celui qui contrôle le serveur pourrait servir une page modifiée. D'où trois garanties :
+
+- chaque version a sa propre adresse (`/v1.0.0/`), dont le contenu ne change jamais ;
+- son empreinte SHA-256 est affichée sur la page d'accueil et dans `/SHA256SUMS` : une page enregistrée depuis le site doit avoir exactement cette empreinte, et s'utilise ensuite hors ligne ;
+- `deploiement/versions-publiees.txt` note l'empreinte de chaque version à sa première publication : si un tag déplacé donnait un autre contenu, `npm run publier` refuse.
+
+**Publier une version**, depuis un dépôt propre où `npm run verifier` passe :
+
+```bash
+git tag v1.0.0
+```
+
+```bash
+npm run publier
+```
+
+```bash
+git add deploiement/versions-publiees.txt && git commit -m "Publication v1.0.0"
+```
+
+```bash
+docker compose -f deploiement/compose.yaml up -d --build
+```
+
+`npm run publier` reconstruit `publication/` (non versionné) à partir de **tous** les tags `vX.Y.Z` : les anciennes versions restent en ligne à leur adresse, la page d'accueil mène à la plus récente.
+
+**Le serveur.** nginx sans privilèges, conteneur en lecture seule, sans capacités, méthodes GET et HEAD seulement, en-têtes de sécurité (`deploiement/entetes-securite.conf`), cache définitif sur les versions. Le conteneur écoute sur `127.0.0.1:8080` : il faut devant lui un proxy inverse en **HTTPS** (Caddy, Traefik, nginx…), car sans HTTPS le navigateur refuse le chiffrement et l'application reste bloquée. Le `.dockerignore` n'admet dans l'image que `publication/` et la configuration du serveur : aucun coffre ne peut y entrer par erreur.
+
 ## Tests
 
 Les tests (Node 22 ou plus récent, sans dépendance) chargent le code depuis `src/`, et vérifient que le HTML livré en est exactement l'assemblage.

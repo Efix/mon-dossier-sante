@@ -1,0 +1,6 @@
+# Liste blanche : l'image ne reçoit que la configuration du serveur et les pages publiées.
+# Rien d'autre du dossier (et surtout aucun coffre .sante) n'entre dans le contexte de construction.
+*
+!deploiement/nginx.conf
+!deploiement/entetes-securite.conf
+!publication/

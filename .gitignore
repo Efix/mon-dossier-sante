@@ -6,3 +6,6 @@ anciennes-versions/
 
 node_modules/
 .claude/
+
+# Pages produites par « npm run publier » pour l'image Docker.
+publication/

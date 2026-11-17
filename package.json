@@ -6,7 +6,8 @@
   "scripts": {
     "build": "node outils/assembler.mjs",
     "test": "node --test \"tests/*.test.mjs\"",
-    "verifier": "node outils/assembler.mjs --verifier && node --test \"tests/*.test.mjs\""
+    "verifier": "node outils/assembler.mjs --verifier && node --test \"tests/*.test.mjs\"",
+    "publier": "node outils/publier.mjs"
   },
   "engines": {
     "node": ">=22"
