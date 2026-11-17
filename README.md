@@ -1,16 +1,16 @@
 # Mon dossier santé
 
-Application hors ligne en un seul fichier, `Mon-Dossier-Sante-Interactif.html`. Les documents et résultats sont conservés dans un coffre chiffré `.sante` que tu gardes sur ton appareil. Aucun compte, aucun réseau.
+Application hors ligne en un seul fichier, `Mon-Dossier-Sante.html`. Les documents et résultats sont conservés dans un coffre chiffré `.sante` que tu gardes sur ton appareil. Aucun compte, aucun réseau.
 
 ## Utiliser
 
-Ouvre `Mon-Dossier-Sante-Interactif.html` dans Edge ou Chrome, puis choisis ton fichier `.sante`.
+Ouvre `Mon-Dossier-Sante.html` dans Edge ou Chrome, puis choisis ton fichier `.sante`.
 
 Le fichier `.sante` n'est jamais versionné (voir `.gitignore`) : sa sauvegarde reste à ta charge, par le bouton « Télécharger une copie chiffrée » de la page Coffre.
 
 ## Modifier
 
-Tout le code est dans le fichier HTML. Après chaque modification du script :
+Tout le code est dans le fichier HTML, dont le nom est défini une seule fois dans `outils/application.mjs`. Après chaque modification du script :
 
 ```bash
 npm run csp

@@ -4,7 +4,9 @@ import fs from 'node:fs'
 import crypto from 'node:crypto'
 import vm from 'node:vm'
 
-export const fichier = new URL('../Mon-Dossier-Sante-Interactif.html', import.meta.url)
+import {fichier} from '../outils/application.mjs'
+
+export {fichier}
 
 export function lireApplication() {
   const html = fs.readFileSync(fichier, 'utf8')

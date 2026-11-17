@@ -7,7 +7,8 @@ import fs from 'node:fs'
 import crypto from 'node:crypto'
 import vm from 'node:vm'
 
-const fichier = new URL('../Mon-Dossier-Sante-Interactif.html', import.meta.url)
+import {fichier} from './application.mjs'
+
 const verifier = process.argv.includes('--verifier')
 const html = fs.readFileSync(fichier, 'utf8')
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match => match[1])
