@@ -33,6 +33,6 @@ Les tests (Node 22 ou plus récent, sans dépendance) chargent le code directeme
 | `tests/fichier.test.mjs` | Empreinte CSP, fins de ligne, PDF.js intact, aucune connexion réseau autorisée |
 | `tests/parseur.test.mjs` | Lecture des bilans Cerballiance et Check-Up, nombres, unités, sections d'urines |
 | `tests/coffre.test.mjs` | Chiffrement, relecture avant écriture, limites du format, fiches structurées, changement de phrase secrète |
-| `tests/dossier.test.mjs` | Fiches (allergies, traitements, vaccinations, antécédents), traitements en cours, rappels de vaccination |
+| `tests/dossier.test.mjs` | Fiches (allergies, traitements, vaccinations, antécédents), traitements en cours, rappels de vaccination, saisie des mesures et IMC |
 
 Tous les bilans des tests sont fictifs. Pour couvrir un vrai compte rendu, ajoute son texte **anonymisé** dans `tests/parseur.test.mjs` avec les lignes attendues.

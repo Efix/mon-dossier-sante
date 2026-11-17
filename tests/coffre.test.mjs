@@ -178,3 +178,15 @@ test('fiches : champs inconnus, valeurs hors liste, dates impossibles et textes 
   assert.doesNotThrow(() => fiches().forEach(Coffre.check))
   assert.doesNotThrow(() => Coffre.check({...dossier()[1], fields:{}}))
 })
+
+test('relevé de mesures : aller-retour, format 2, valeurs mal formées refusées', async () => {
+  const releve = {id:'m', kind:'measure', lab:'', date:'2026-11-17', title:'Relevé de mesures', notes:'', file:null, results:[],
+    fields:{weight:'72,5', height:'172', systolic:'125', diastolic:'80', pulse:'64', temperature:'37,2', spo2:'98'}}
+  const scelle = await Coffre.seal(cle, sel, [releve])
+  assert.equal(await formatDe(scelle), 2)
+  assert.deepEqual((await Coffre.open(scelle.blob, phrase)).records[0].fields, releve.fields)
+  for (const [cle, valeur] of [['weight', '72.5'], ['weight', '401'], ['weight', '72,555'], ['systolic', '12,5'], ['spo2', '101'], ['pulse', 'soixante'], ['temperature', 37]]) {
+    assert.throws(() => Coffre.check({...releve, fields:{...releve.fields, [cle]:valeur}}), `${cle} = ${valeur}`)
+  }
+  assert.throws(() => Coffre.check({...releve, fields:{poids:'72'}}), 'champ inconnu')
+})

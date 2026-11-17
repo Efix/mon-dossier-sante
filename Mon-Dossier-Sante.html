@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-hazPlnRhKgBCgtiX7JddXkwc+TFjnGcW8vKZWtuuBqg=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-gCys18Hb3lyhhug5sh5vRCQhyMoFKlogpgp5Hfnlz6M=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>Mon dossier santé</title>
@@ -164,6 +164,13 @@ p { line-height: 1.55; }
 }
 .card { padding: 17px 19px; display: grid; gap: 6px; }
 .card strong { font-size: 2rem; letter-spacing: -.055em; font-variant-numeric: tabular-nums; }
+.grid-stats.measure-cards { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); }
+.measure-cards .card strong { font-size: 1.6rem; }
+.measure-cards .card-unit { font-size: .95rem; font-weight: 600; letter-spacing: 0; margin-left: 4px; }
+.card-date { font-size: .8rem; }
+.chart-legend { display: flex; gap: 6px 18px; flex-wrap: wrap; }
+.chart-legend span::before { content: ""; display: inline-block; width: 22px; margin-right: 6px; vertical-align: middle; border-top: 2px solid #0b614d; }
+.chart-legend .second::before { border-top: 2px dashed #4f6fae; }
 .panel { min-width: 0; padding: clamp(14px, 2.7vw, 23px); }
 .section-line { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 7px 12px; }
 .panel > .section-line { margin-bottom: 12px; }
@@ -388,6 +395,7 @@ dialog::backdrop { background: #0d201fb3; }
       <nav id="navigation" aria-label="Sections">
         <button type="button" data-nav="home" aria-current="page">Vue d’ensemble</button>
         <button type="button" data-nav="profile">Fiche santé</button>
+        <button type="button" data-nav="measures">Mesures</button>
         <button type="button" data-nav="labs">Résultats</button>
         <button type="button" data-nav="tracking">Mon suivi biologique</button>
         <button type="button" data-nav="docs">Chronologie</button>
@@ -1122,6 +1130,7 @@ dialog::backdrop { background: #0d201fb3; }
     treatment:'Traitement',
     allergy:'Allergie',
     history:'Antécédent',
+    measure:'Mesures',
     note:'Note de santé',
     other:'Autre document',
   }
@@ -1131,9 +1140,22 @@ dialog::backdrop { background: #0d201fb3; }
     treatment:{dose:160, reason:160, prescriber:120, end:'date'},
     allergy:{reaction:200, severity:['', 'mild', 'moderate', 'severe']},
     history:{category:['', 'medical', 'surgical', 'family']},
+    // Mesures : nombre à virgule décimale (« 72,5 »), dans les bornes, avec au plus `decimals` décimales.
+    measure:{
+      weight:{min:0.5, max:400, decimals:2}, height:{min:30, max:250, decimals:1},
+      systolic:{min:50, max:300, decimals:0}, diastolic:{min:20, max:200, decimals:0},
+      pulse:{min:20, max:250, decimals:0}, temperature:{min:30, max:45, decimals:1}, spo2:{min:50, max:100, decimals:0},
+    },
+  }
+  const numberRule = rule => typeof rule === 'object' && !Array.isArray(rule)
+  function validNumber(value, rule) {
+    const pattern = rule.decimals ? new RegExp('^\\d{1,3}(?:,\\d{1,' + rule.decimals + '})?$') : /^\d{1,3}$/
+    if (!pattern.test(value)) return false
+    const number = Number(value.replace(',', '.'))
+    return number >= rule.min && number <= rule.max
   }
   // Types inconnus du premier format : leur présence fait passer le coffre au format 2.
-  const recentKinds = new Set(['treatment', 'allergy', 'history'])
+  const recentKinds = new Set(['treatment', 'allergy', 'history', 'measure'])
   const labs = {cerballiance:'Cerballiance', checkup:'Check-Up', other:'Autre laboratoire'}
   const safeName = text => String(text ?? '').replace(/[\u0000-\u001f\u007f<>:"/\\|?*]/g, '_')
     .replace(/[\u202a-\u202e\u2066-\u2069]/g, '').trim().slice(0, 200) || 'document'
@@ -1193,7 +1215,7 @@ dialog::backdrop { background: #0d201fb3; }
     for (const [key, rule] of Object.entries(rules)) {
       const value = given[key] ?? ''
       const valid = typeof value === 'string' && (rule === 'date' ? value === '' || Lab.validDate(value) :
-        Array.isArray(rule) ? rule.includes(value) : value.length <= rule)
+        Array.isArray(rule) ? rule.includes(value) : numberRule(rule) ? value === '' || validNumber(value, rule) : value.length <= rule)
       if (!valid) throw Error('Fiche invalide.')
       if (value !== '') fields[key] = value
     }
@@ -1386,6 +1408,17 @@ dialog::backdrop { background: #0d201fb3; }
 
   // Formulaires des fiches : libellés du titre et de la date, puis champs propres à chaque type.
   // Champ : [clé, libellé, 'text' | 'date' | {valeur: libellé}, exemple].
+  // Grandeurs mesurées : libellé et unité, dans l'ordre d'affichage.
+  const metrics = {
+    weight:{label:'Poids', unit:'kg', example:'72,5'},
+    height:{label:'Taille', unit:'cm', example:'172'},
+    systolic:{label:'Tension systolique', unit:'mmHg', example:'125'},
+    diastolic:{label:'Tension diastolique', unit:'mmHg', example:'80'},
+    pulse:{label:'Pouls', unit:'bpm', example:'64'},
+    temperature:{label:'Température', unit:'°C', example:'37,2'},
+    spo2:{label:'Saturation en oxygène', unit:'%', example:'98'},
+  }
+
   const forms = {
     vaccine:{add:'Ajouter une vaccination', title:'Intitulé', example:'Rappel DTP, vaccin grippe 2026…', date:'Date de l’injection', fields:[
       ['vaccine', 'Vaccin ou maladie visée', 'text', 'Tétanos, grippe, hépatite B…'],
@@ -1405,6 +1438,76 @@ dialog::backdrop { background: #0d201fb3; }
     history:{add:'Ajouter un antécédent', title:'Antécédent', example:'Appendicectomie, asthme, diabète du père…', date:'Date ou année (approximative si besoin)', fields:[
       ['category', 'Nature', {'':'Non précisée', medical:'Médical', surgical:'Chirurgical', family:'Familial'}, ''],
     ]},
+    measure:{add:'Ajouter des mesures', title:'Intitulé', example:'Mesures du matin, consultation…', date:'Date de la mesure', defaultTitle:'Relevé de mesures',
+      fields:Object.entries(metrics).map(([key, metric]) => [key, metric.label, 'number', metric.example])},
+  }
+
+  const decimal = new Intl.NumberFormat('fr-FR', {maximumFractionDigits:2})
+  const numberOf = value => Number(String(value).replace(',', '.'))
+
+  // Valeur saisie → forme enregistrée (« 72.50 » devient « 72,5 »), ou erreur explicite.
+  function readMeasure(key, text) {
+    const rule = Coffre.fieldRules.measure[key]
+    const metric = metrics[key]
+    let value = String(text ?? '').replace(/[\s\u00a0\u202f]/g, '').replace('.', ',')
+    if (!value) return ''
+    if (/^\d+,\d*$/.test(value)) value = value.replace(/,?0*$/, '')
+    const number = numberOf(value)
+    const places = rule.decimals ? (rule.decimals === 1 ? 'une décimale' : rule.decimals + ' décimales') + ' au plus' : 'sans décimale'
+    if (!/^\d+(?:,\d+)?$/.test(value) || !(number >= rule.min && number <= rule.max) || (value.split(',')[1]?.length ?? 0) > rule.decimals) {
+      throw Error(metric.label + ' : indique un nombre entre ' + decimal.format(rule.min) + ' et ' + decimal.format(rule.max) +
+        ' ' + metric.unit + ', ' + places + '.')
+    }
+    return value
+  }
+
+  // Contrôle d'un relevé complet : au moins une valeur, tension saisie en entier et cohérente.
+  function checkMeasures(input) {
+    const fields = {}
+    for (const key of Object.keys(metrics)) {
+      const value = readMeasure(key, input[key])
+      if (value) fields[key] = value
+    }
+    if (!Object.keys(fields).length) throw Error('Indique au moins une mesure.')
+    if (Boolean(fields.systolic) !== Boolean(fields.diastolic)) throw Error('Indique les deux chiffres de la tension : systolique et diastolique.')
+    if (fields.systolic && numberOf(fields.systolic) <= numberOf(fields.diastolic)) {
+      throw Error('La tension systolique (le premier chiffre) doit dépasser la diastolique.')
+    }
+    return fields
+  }
+
+  const withUnit = (key, value) => value + (metrics[key].unit.startsWith('/') ? '' : ' ') + metrics[key].unit
+
+  // Résumé d'un relevé en une ligne : « 72,5 kg · 125/80 mmHg · pouls 64/min ».
+  function measureSummary(fields) {
+    return [
+      fields.weight && withUnit('weight', fields.weight),
+      fields.systolic && fields.systolic + '/' + fields.diastolic + ' mmHg',
+      fields.pulse && 'pouls ' + withUnit('pulse', fields.pulse),
+      fields.temperature && withUnit('temperature', fields.temperature),
+      fields.spo2 && 'SpO₂ ' + withUnit('spo2', fields.spo2),
+      fields.height && 'taille ' + withUnit('height', fields.height),
+    ].filter(Boolean).join(' · ')
+  }
+
+  // Séries chronologiques de chaque grandeur, plus l'IMC : poids divisé par le carré de la taille,
+  // avec la taille du même relevé, sinon la dernière connue avant lui, sinon la première notée.
+  function measureSeries(records) {
+    const sorted = records.filter(record => record.kind === 'measure').sort((a, b) => a.date.localeCompare(b.date))
+    const series = Object.fromEntries([...Object.keys(metrics), 'bmi'].map(key => [key, []]))
+    const heights = sorted.filter(record => record.fields.height)
+    for (const record of sorted) {
+      for (const key of Object.keys(metrics)) {
+        if (record.fields[key]) series[key].push({date:record.date, value:record.fields[key], record})
+      }
+      if (!record.fields.weight) continue
+      const source = record.fields.height ? record : heights.findLast(item => item.date <= record.date) ?? heights[0]
+      if (!source) continue
+      const meters = numberOf(source.fields.height) / 100
+      const bmi = (Math.round(numberOf(record.fields.weight) / (meters * meters) * 10) / 10).toFixed(1).replace('.', ',').replace(/,0$/, '')
+      series.bmi.push({date:record.date, value:bmi, record, heightDate:source.date})
+    }
+    return series
   }
 
   const pad = value => String(value).padStart(2, '0')
@@ -1418,6 +1521,7 @@ dialog::backdrop { background: #0d201fb3; }
   // Valeur lisible d'un champ de fiche : libellé pour une liste, texte tel quel sinon.
   function fieldText(kind, key, value) {
     const type = forms[kind]?.fields.find(field => field[0] === key)?.[2]
+    if (type === 'number') return withUnit(key, value)
     return type && typeof type === 'object' ? type[value] ?? value : value
   }
 
@@ -1447,7 +1551,7 @@ dialog::backdrop { background: #0d201fb3; }
     }).sort((a, b) => rank[a.status] - rank[b.status] || a.booster.localeCompare(b.booster) || a.name.localeCompare(b.name, 'fr'))
   }
 
-  globalThis.Dossier = {forms, today, addDays, fieldText, ongoing, vaccinations}
+  globalThis.Dossier = {forms, metrics, today, addDays, fieldText, ongoing, vaccinations, readMeasure, checkMeasures, measureSummary, measureSeries}
 })()
 
 ;
@@ -1988,7 +2092,7 @@ dialog::backdrop { background: #0d201fb3; }
       if (item.dataset.nav === route) item.setAttribute('aria-current', 'page')
       else item.removeAttribute('aria-current')
     }
-    const render = {home:renderHome, profile:renderProfile, labs:renderLabs, tracking:renderTracking, docs:renderTimeline, vault:renderVault}[route]
+    const render = {home:renderHome, profile:renderProfile, measures:renderMeasures, labs:renderLabs, tracking:renderTracking, docs:renderTimeline, vault:renderVault}[route]
     render()
     refreshStatus()
   }
@@ -2044,6 +2148,7 @@ dialog::backdrop { background: #0d201fb3; }
       return [fields.reaction, fields.severity && 'gravité ' + Dossier.fieldText('allergy', 'severity', fields.severity).toLowerCase()].filter(Boolean).join(' · ')
     }
     if (record.kind === 'history') return fields.category ? Dossier.fieldText('history', 'category', fields.category) : ''
+    if (record.kind === 'measure') return Dossier.measureSummary(fields)
     return ''
   }
 
@@ -2163,6 +2268,77 @@ dialog::backdrop { background: #0d201fb3; }
     return wrapper
   }
 
+  // Poids, tension, pouls… : dernières valeurs, courbes et relevés.
+  function renderMeasures() {
+    const add = () => openEditor('measure')
+    const head = pageHeader('Mesures', 'Poids, tension, pouls, température : relevés à la maison ou lors d’une consultation.',
+      button('Ajouter des mesures', add, 'primary'))
+    const records = session.records.filter(record => record.kind === 'measure').sort(chronological)
+    if (!records.length) {
+      const panel = el('section', 'panel')
+      panel.append(empty('Tes relevés apparaîtront ici, avec leurs courbes, dès la première saisie.'))
+      $('view').replaceChildren(head, panel)
+      return
+    }
+    const series = Dossier.measureSeries(records)
+    const unitOf = key => key === 'bmi' ? 'kg/m²' : Dossier.metrics[key].unit
+    const latest = key => series[key].at(-1)
+
+    const cards = el('div', 'grid-stats measure-cards')
+    const card = (label, value, unitText, date, detail = '') => {
+      const block = el('div', 'card')
+      const figure = el('strong', '', value)
+      figure.append(el('span', 'card-unit', unitText))
+      block.append(figure, el('span', 'muted', label), el('span', 'muted card-date', 'le ' + formatDate(date) + detail))
+      cards.append(block)
+    }
+    const pressure = series.systolic.at(-1)
+    for (const key of ['weight', 'bmi', 'pressure', 'pulse', 'temperature', 'spo2', 'height']) {
+      if (key === 'pressure') {
+        if (pressure) card('Tension', pressure.value + '/' + pressure.record.fields.diastolic, 'mmHg', pressure.date)
+        continue
+      }
+      const last = latest(key)
+      if (!last) continue
+      const detail = key === 'bmi' && last.heightDate !== last.date ? ' · taille du ' + formatDate(last.heightDate) : ''
+      card(key === 'bmi' ? 'IMC (calculé)' : Dossier.metrics[key].label, last.value, unitOf(key), last.date, detail)
+    }
+
+    // Une mesure devient un point de courbe, avec le relevé d'origine pour l'infobulle.
+    const items = (key, label = '') => series[key].map(point => ({
+      value:point.value, unit:unitOf(key), reference:'', date:point.date, page:0, document:point.record, label,
+    }))
+    const charts = el('div', 'bio-cards')
+    const pending = []
+    const chart = (title, key, extraKey = '', legend = null) => {
+      if (!series[key].length) return
+      const block = el('section', 'panel')
+      section(block, title + ' · ' + unitOf(key))
+      const canvas = el('canvas', 'chart')
+      canvas.setAttribute('role', 'img')
+      canvas.setAttribute('aria-label', 'Évolution : ' + title + '. Les valeurs figurent dans les relevés plus bas.')
+      block.append(canvas)
+      if (legend) block.append(legend)
+      charts.append(block)
+      pending.push(() => drawChart(canvas, items(key, extraKey ? 'Systolique' : ''), unitOf(key), extraKey ? items(extraKey, 'Diastolique') : []))
+    }
+    chart('Poids', 'weight')
+    const bmiNote = el('p', 'small muted plot-meta', 'L’IMC est calculé avec la taille du même relevé, sinon la dernière taille notée.')
+    chart('IMC', 'bmi', '', bmiNote)
+    const legend = el('p', 'small muted plot-meta chart-legend')
+    legend.append(el('span', '', 'Systolique'), el('span', 'second', 'Diastolique'))
+    chart('Tension artérielle', 'systolic', 'diastolic', legend)
+    chart('Pouls', 'pulse')
+    chart('Température', 'temperature')
+    chart('Saturation en oxygène', 'spo2')
+
+    const history = el('section', 'panel')
+    section(history, 'Relevés', button('Ajouter des mesures', add))
+    history.append(listRecords(records, ''))
+    $('view').replaceChildren(head, cards, charts, el('div', 'small', '\u00a0'), history)
+    for (const draw of pending) draw()
+  }
+
   // Tout le dossier dans l'ordre du temps, année par année.
   function renderTimeline() {
     const head = pageHeader('Chronologie', 'Tout le dossier dans l’ordre du temps : documents, bilans, traitements, vaccinations.',
@@ -2274,7 +2450,7 @@ dialog::backdrop { background: #0d201fb3; }
       active = point
       tip.replaceChildren(el('strong', '', formatDate(point.item.date)))
       for (const item of point.items.slice(0, 2)) {
-        tip.append(el('span', '', measurement(item) + ' · ' + describe(item.document)))
+        tip.append(el('span', '', (item.label ? item.label + ' · ' : '') + measurement(item) + ' · ' + describe(item.document)))
         const state = stateOf(item, item.document.lab)
         if (outOfRange(state)) tip.append(el('span', 'flag-line', flagText[state]))
         if (item.reference) tip.append(el('span', 'muted bio-ref', 'Référence du labo · ' + item.reference))
@@ -2288,7 +2464,8 @@ dialog::backdrop { background: #0d201fb3; }
       const marker = button('', () => showTip(point), 'bio-point')
       marker.hidden = true
       marker.tabIndex = index === groups.length - 1 ? 0 : -1
-      marker.setAttribute('aria-label', formatDate(point.item.date) + ' · ' + measurement(point.item) + ' · ' + describe(point.item.document) +
+      marker.setAttribute('aria-label', formatDate(point.item.date) + ' · ' + (point.item.label ? point.item.label + ' ' : '') +
+        measurement(point.item) + ' · ' + describe(point.item.document) +
         (outOfRange(point.state) ? ' · ' + flagText[point.state] : ''))
       marker.addEventListener('pointerenter', event => {if (event.pointerType !== 'touch') showTip(point)})
       marker.addEventListener('pointerleave', () => {if (active === point && document.activeElement !== marker) hideTip()})
@@ -2375,14 +2552,19 @@ dialog::backdrop { background: #0d201fb3; }
     render()
   }
 
-  function drawChart(canvas, entries, unitLabel) {
-    const raw = entries.map(item => ({
+  // `extra` : seconde série facultative sur le même axe (tension diastolique), tracée en tirets.
+  function drawChart(canvas, entries, unitLabel, extra = []) {
+    const plot = list => list.map(item => ({
       item, date:datePoint(item.date), value:Lab.exactNumber(item.value, item.document.lab, item.unit), state:stateOf(item, item.document.lab),
     })).sort((a,b) => a.date - b.date)
+    const raw = plot(entries)
+    const raw2 = plot(extra)
     const points = raw.filter(point => point.value !== null)
+    const points2 = raw2.filter(point => point.value !== null)
     if (!points.length) return
-    const band = sharedReference(entries)
-    const positionPoints = enablePointDetails(canvas, points, band)
+    const band = extra.length ? null : sharedReference(entries)
+    const positionPoints = enablePointDetails(canvas, points.concat(points2), band)
+    const dates = raw.concat(raw2).map(point => point.date)
     const chartDate = new Intl.DateTimeFormat('fr-FR', {day:'2-digit', month:'short', year:'2-digit', timeZone:'UTC'})
     const tick = new Intl.NumberFormat('fr-FR', {maximumSignificantDigits:5})
     function draw() {
@@ -2397,14 +2579,14 @@ dialog::backdrop { background: #0d201fb3; }
       if (!c) return
       c.scale(ratio, ratio)
       c.font = '12px "Segoe UI",sans-serif'
-      const values = points.map(point => point.value).concat(band ?? [])
+      const values = points.concat(points2).map(point => point.value).concat(band ?? [])
       const min = Math.min(...values)
       const max = Math.max(...values)
       const padding = (max - min) * .16 || Math.abs(max) * .09 || 1
       const bottom = min - padding
       const top = max + padding
-      const start = raw[0].date
-      const end = raw.at(-1).date
+      const start = Math.min(...dates)
+      const end = Math.max(...dates)
       const left = Math.max(46, c.measureText(tick.format(top)).width + 10, c.measureText(tick.format(bottom)).width + 10)
       const right = width - 11
       const x = date => start === end ? (left + right) / 2 : left + (date - start) / (end - start) * (right - left)
@@ -2442,6 +2624,22 @@ dialog::backdrop { background: #0d201fb3; }
         started = true
       }
       c.stroke()
+      if (points2.length) {
+        c.strokeStyle = '#4f6fae'
+        c.setLineDash([6, 4])
+        c.beginPath()
+        let next = false
+        for (const point of raw2) {
+          if (point.value === null) { next = false; continue }
+          if (next) c.lineTo(x(point.date), y(point.value))
+          else c.moveTo(x(point.date), y(point.value))
+          next = true
+        }
+        c.stroke()
+        c.setLineDash([])
+        c.fillStyle = '#4f6fae'
+        for (const point of points2) c.fillRect(x(point.date) - 3.5, y(point.value) - 3.5, 7, 7)
+      }
       // Dans la référence : point plein. Hors référence : anneau ambré, reconnaissable sans la couleur.
       for (const point of points) {
         const out = outOfRange(point.state)
@@ -2881,12 +3079,17 @@ dialog::backdrop { background: #0d201fb3; }
         input.type = 'date'
         input.min = '1900-01-01'
         input.max = '2199-12-31'
+      } else if (type === 'number') {
+        input.inputMode = 'decimal'
+        input.maxLength = 8
+        input.autocomplete = 'off'
+        if (example) input.placeholder = 'ex. ' + example
       } else {
         input.maxLength = Coffre.fieldRules[kind][key]
         if (example) input.placeholder = example
       }
       input.value = values[key] ?? ''
-      return inputField(label, input)
+      return inputField(type === 'number' ? label + ' (' + Dossier.metrics[key].unit + ')' : label, input)
     }))
     updateAttachmentUI()
   }
@@ -2912,7 +3115,7 @@ dialog::backdrop { background: #0d201fb3; }
       kind === 'bio' ? 'Importer un bilan' : form?.add ?? 'Ajouter un document'
     $('editor-submit').textContent = existing ? 'Appliquer les modifications' : 'Ajouter au dossier'
     $('editor-submit').disabled = false
-    $('doc-title').value = existing?.title ?? ''
+    $('doc-title').value = existing?.title ?? form?.defaultTitle ?? ''
     $('doc-kind').value = kind
     $('doc-date').value = existing?.date ?? (form ? Dossier.today() : '')
     $('doc-notes').value = existing?.notes ?? ''
@@ -3174,8 +3377,9 @@ dialog::backdrop { background: #0d201fb3; }
       if (existingBytes + (draft.file?.bytes.length ?? 0) >= Coffre.MAX_VAULT - 200000) {
         throw Error('Ce document dépasserait la capacité du coffre de 150 Mo.')
       }
-      const fields = Object.fromEntries(Array.from($('extra-fields').querySelectorAll('[data-extra]'),
+      const typed = Object.fromEntries(Array.from($('extra-fields').querySelectorAll('[data-extra]'),
         input => [input.dataset.extra, input.value.trim()]).filter(([, value]) => value))
+      const fields = kind === 'measure' ? Dossier.checkMeasures(typed) : typed
       if (kind === 'treatment' && fields.end && fields.end < date) throw Error('La date de fin du traitement précède sa date de début.')
       if (kind === 'vaccine' && fields.booster && fields.booster <= date) throw Error('Le prochain rappel doit être postérieur à la date de l’injection.')
       const record = {id:draft.id || crypto.randomUUID(), title, kind, lab, date, notes:$('doc-notes').value.trim(), fields, file:draft.file, results}
@@ -3189,7 +3393,7 @@ dialog::backdrop { background: #0d201fb3; }
       else session.records.push(record)
       draft.changed = false
       $('editor').close()
-      show(editing ? view : kind === 'bio' ? 'labs' : Dossier.forms[kind] ? 'profile' : 'docs')
+      show(editing ? view : kind === 'bio' ? 'labs' : kind === 'measure' ? 'measures' : Dossier.forms[kind] ? 'profile' : 'docs')
       const sheet = Boolean(Dossier.forms[kind])
       afterChange(editing ? (sheet ? 'Fiche modifiée.' : 'Document modifié.') : sheet ? 'Fiche ajoutée.' : 'Document ajouté.')
     } catch (error) {
