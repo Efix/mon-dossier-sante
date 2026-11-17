@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-5kfJ8LQrf/1ntJPEt0tWw9YChF62z/VWC/JUXt6ojMo=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-k1gDyzPWh2cvVa+E2Z9yfRfK3T4Fd39WlPW0OCSlv70=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <title>Mon dossier santé</title>
@@ -440,6 +440,10 @@ dialog::backdrop { background: #0d201fb3; }
           <div class="field"><label for="doc-date" id="doc-date-label">Date du document</label><input id="doc-date" type="date" min="1900-01-01" max="2199-12-31" required></div>
         </div>
         <div id="extra-fields" class="form-grid" hidden></div>
+        <div id="report-tools" class="stack tight" hidden>
+          <div class="actions"><button type="button" class="secondary" id="read-report">Relire le compte rendu</button></div>
+          <p id="report-message" class="notice" role="status" hidden></p>
+        </div>
         <section id="lab-fields" class="stack tight" aria-labelledby="measure-title" hidden>
           <div class="field">
             <label for="doc-lab">Laboratoire</label>
@@ -1169,6 +1173,9 @@ dialog::backdrop { background: #0d201fb3; }
     treatment:{dose:160, reason:160, prescriber:120, end:'date'},
     allergy:{reaction:200, severity:['', 'mild', 'moderate', 'severe']},
     history:{category:['', 'medical', 'surgical', 'family']},
+    // Comptes rendus : repris du PDF à l'import (voir compte-rendu.js), ou saisis à la main.
+    imaging:{conclusion:2000, indication:300, prescriber:120, practitioner:120, place:160},
+    report:{conclusion:2000, indication:300, prescriber:120, practitioner:120, place:160},
     // Mesures : nombre à virgule décimale (« 72,5 »), dans les bornes, avec au plus `decimals` décimales.
     measure:{
       weight:{min:0.5, max:400, decimals:2}, height:{min:30, max:250, decimals:1},
@@ -1185,6 +1192,8 @@ dialog::backdrop { background: #0d201fb3; }
   }
   // Types inconnus du premier format : leur présence fait passer le coffre au format 2.
   const recentKinds = new Set(['treatment', 'allergy', 'history', 'measure'])
+  // Types connus du format 2, mais dont les champs n'existent qu'à partir du format 3.
+  const reportKinds = new Set(['imaging', 'report'])
   const labs = {cerballiance:'Cerballiance', checkup:'Check-Up', other:'Autre laboratoire'}
   const safeName = text => String(text ?? '').replace(/[\u0000-\u001f\u007f<>:"/\\|?*]/g, '_')
     .replace(/[\u202a-\u202e\u2066-\u2069]/g, '').trim().slice(0, 200) || 'document'
@@ -1281,7 +1290,9 @@ dialog::backdrop { background: #0d201fb3; }
     })
     // Format 2 dès qu'une fiche structurée existe : une ancienne version de l'application refuse alors le coffre
     // au lieu de l'ouvrir en perdant ces données. Sans fiche, le coffre reste lisible partout (format 1).
-    const version = list.some(record => recentKinds.has(record.kind) || Object.keys(record.fields).length) ? 2 : 1
+    // Format 3 dès qu'un compte rendu a des champs : même raison, une version antérieure les perdrait.
+    const version = list.some(record => reportKinds.has(record.kind) && Object.keys(record.fields).length) ? 3 :
+      list.some(record => recentKinds.has(record.kind) || Object.keys(record.fields).length) ? 2 : 1
     const metadata = encoder.encode(JSON.stringify({version, records:list}))
     if (metadata.length + 4 > 16 * MiB || list.length > 15000) throw Error('Le coffre dépasse sa capacité de classement.')
     const length = 4 + metadata.length + list.reduce((total, record) => total + (record.file?.size ?? 0), 0)
@@ -1303,7 +1314,7 @@ dialog::backdrop { background: #0d201fb3; }
     const limit = 4 + new DataView(buffer).getUint32(0)
     if (limit > buffer.byteLength || limit > 16 * MiB) throw Error('Métadonnées invalides.')
     const data = JSON.parse(decoder.decode(new Uint8Array(buffer, 4, limit - 4)))
-    if ((data.version !== 1 && data.version !== 2) || !Array.isArray(data.records) || data.records.length > 15000) throw Error('Version ou format non reconnu.')
+    if (![1, 2, 3].includes(data.version) || !Array.isArray(data.records) || data.records.length > 15000) throw Error('Version ou format non reconnu.')
     const ids = new Set()
     let offset = limit
     const records = data.records.map(input => {
@@ -1471,6 +1482,18 @@ dialog::backdrop { background: #0d201fb3; }
       fields:Object.entries(metrics).map(([key, metric]) => [key, metric.label, 'number', metric.example])},
   }
 
+  // Champs des comptes rendus (imagerie et autres) : documents de la chronologie, pas des fiches de la fiche santé.
+  // Proposés à l'import d'un PDF par CompteRendu.read, toujours modifiables.
+  const reportFields = [
+    ['conclusion', 'Conclusion', 'textarea', 'Ce que retient le médecin'],
+    ['indication', 'Indication', 'text', 'Motif de l’examen ou de la consultation'],
+    ['prescriber', 'Demandé par', 'text', 'Dr …'],
+    ['practitioner', 'Réalisé par', 'text', 'Dr …'],
+    ['place', 'Lieu', 'text', 'Centre, cabinet, hôpital…'],
+  ]
+  const documentFields = {imaging:reportFields, report:reportFields}
+  const fieldsFor = kind => forms[kind]?.fields ?? documentFields[kind] ?? []
+
   const decimal = new Intl.NumberFormat('fr-FR', {maximumFractionDigits:2})
   const numberOf = value => Number(String(value).replace(',', '.'))
 
@@ -1580,9 +1603,174 @@ dialog::backdrop { background: #0d201fb3; }
     }).sort((a, b) => rank[a.status] - rank[b.status] || a.booster.localeCompare(b.booster) || a.name.localeCompare(b.name, 'fr'))
   }
 
-  globalThis.Dossier = {forms, metrics, today, addDays, fieldText, ongoing, vaccinations, readMeasure, checkMeasures, measureSummary, measureSeries}
+  globalThis.Dossier = {forms, documentFields, fieldsFor, metrics, today, addDays, fieldText, ongoing, vaccinations, readMeasure, checkMeasures, measureSummary, measureSeries}
 })()
 
+;
+(() => {
+  'use strict'
+
+  // Lecture d'un compte rendu (imagerie, consultation, examen) : examen, date, indication, conclusion,
+  // médecin demandeur, praticien et lieu. Tout est proposé à la personne, qui vérifie avec l'original.
+  // Les données d'identité du patient (nom, date de naissance…) ne sont jamais reprises.
+
+  const limits = Coffre.fieldRules.imaging
+
+  // Minuscules sans accents, même longueur que l'original : une position trouvée ici vaut dans la ligne d'origine.
+  const plain = line => line.split('').map(char => char.normalize('NFD')[0].toLowerCase()[0]).join('')
+  const clean = value => String(value ?? '').replace(/[  \t]/g, ' ').replace(/ {2,}/g, ' ').trim()
+
+  const months = ['janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin', 'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre']
+  const datePattern = new RegExp(String.raw`(\d{1,2})\s*[/.-]\s*(\d{1,2})\s*[/.-]\s*(\d{4}|\d{2})\b|(\d{1,2})(?:er)?\s+(` + months.join('|') + String.raw`)\s+(\d{4})`)
+  function dateIn(text) {
+    const m = plain(text).match(datePattern)
+    if (!m) return ''
+    let [day, month, year] = m[1] ? [m[1], m[2], m[3]] : [m[4], String(months.indexOf(m[5]) + 1), m[6]]
+    if (year.length === 2) year = (Number(year) > 50 ? '19' : '20') + year
+    const iso = year + '-' + month.padStart(2, '0') + '-' + day.padStart(2, '0')
+    return Lab.validDate(iso) ? iso : ''
+  }
+
+  // Lignes qui parlent du patient ou d'un autre document : jamais une date d'examen.
+  const identity = /naissance|\bnee? le\b|\bddn\b|\bage\b|\bnir\b|securite sociale|\bipp\b|imprime|edite le|\bedition\b/
+  const weekday = String.raw`(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)\s+`
+  // Du plus explicite au moins sûr : le premier motif qui trouve une date l'emporte.
+  const dateRules = [
+    new RegExp(String.raw`\bdate (?:de l['’ ]?|d['’ ]?|du |de )?(?:examen|exam|consultation|intervention|hospitalisation|realisation|acte)\b`),
+    /\b(?:examen|consultation|intervention|acte) (?:realisee? |pratiquee? |effectuee? )?(?:du|le)\b|\b(?:realise|pratique|effectue|vue?) le\b|\bvue? en consultation le\b/,
+    new RegExp(String.raw`(?:^|, )le (?:` + weekday + String.raw`)?\d`),
+    /\b(?:valide|signe)e? (?:electroniquement )?le\b/,
+  ]
+
+  const imagingStart = /^(?:echo\w*|doppler|radio\w*|scanner|uro ?scanner|angio\s?\w*|arthro\s?\w*|tomodensitometrie|tdm|irm|imagerie par resonance|mammographie|osteodensitometrie|densitometrie|scintigraphie|tep\b|pet\b|panoramique dentaire|cone beam|cystographie|hysterosalpingographie|elastographie|fibroscan)/
+  const reportStart = /^(?:compte ?rendu|cr (?:de |d )|consultation|lettre de sortie|courrier|endoscopie|fibroscopie|gastroscopie|coloscopie|electrocardiogramme|ecg\b|epreuve d effort|holter|exploration fonctionnelle|efr\b|polysomnographie|electromyogramme|emg\b|eeg\b|bilan urodynamique)/
+  const notTitle = /•|\||centre|cabinet|clinique|hopital|polyclinique|service|groupe|\btel\b|telephone|fax|www|@|avenue|\brue\b|boulevard|docteur|\bdr\b|materiel|appareil|valide|realise par|a la demande|indication/
+
+  // Titres de section : la ligne entière est le titre, éventuellement suivie de « : » et d'un texte.
+  const headings = [
+    ['indication', /^(?:indications?|motif(?: de l ?examen| de (?:la )?consultation| de l ?hospitalisation)?|renseignements? cliniques?|contexte(?: clinique)?|histoire (?:clinique|de la maladie))\b/],
+    ['conclusion', /^(?:conclusions?|au total|en conclusion|en resume|synthese|impression|avis)\b/],
+    ['other', /^(?:technique|protocole|resultats?|description|observations?|constatations?|examen clinique|antecedents?|traitements?|comparaison|commentaires?)\b/],
+  ]
+  const closing = /^(?:(?:bien )?(?:confraternellement|cordialement)|(?:tres )?confraternellement|veuillez agreer|je vous (?:prie|remercie)|merci de (?:m ?avoir|votre)|avec mes|amities|signe|compte ?rendu (?:valide|signe|redige)|valide electroniquement|(?:dr|docteur|pr|professeur)\b)/
+
+  function headingOf(line) {
+    const text = plain(line).replace(/[^a-z0-9]+/g, ' ').trim()
+    for (const [key, pattern] of headings) {
+      const m = text.match(pattern)
+      if (!m) continue
+      // Un titre est court ; au-delà, c'est une phrase qui commence par ce mot (« Avis favorable pour… »).
+      const colon = line.indexOf(':')
+      const head = colon >= 0 ? line.slice(0, colon) : line
+      if (plain(head).replace(/[^a-z0-9]+/g, ' ').trim().split(' ').length > 6) continue
+      if (colon < 0 && text.split(' ').length > 6) continue
+      return {key, rest:colon >= 0 ? clean(line.slice(colon + 1)) : ''}
+    }
+    return null
+  }
+
+  // Majuscules → minuscules, sauf sigles connus ; première lettre en capitale.
+  const acronyms = new Set(['irm', 'tdm', 'tep', 'orl', 'ecg', 'eeg', 'emg', 'efr', 'atm', 'asp', 'uiv', 'tsh', 'rx'])
+  function sentenceCase(text) {
+    if (/\p{Ll}/u.test(text)) return text
+    const lower = text.toLowerCase().replace(/\p{L}+/gu, word => acronyms.has(plain(word)) ? word.toUpperCase() : word)
+    return lower.charAt(0).toUpperCase() + lower.slice(1)
+  }
+
+  // Texte d'une section : lignes jointes, une ligne à puce garde son retour à la ligne.
+  function joinLines(lines, max) {
+    let text = ''
+    for (const line of lines) {
+      const bullet = /^[-•–*]\s/.test(line)
+      text += text ? (bullet ? '\n' : ' ') + line : line
+    }
+    if (text.length <= max) return text
+    const cut = text.slice(0, max - 1)
+    const end = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('\n'))
+    return (end > max / 2 ? cut.slice(0, end + 1) : cut).trimEnd() + '…'
+  }
+
+  const doctor = /^(?:(?:dr|docteur|pr|professeur)\.?\s+)/i
+  const shortDoctor = text => clean(text).replace(doctor, match => /^p/i.test(match) ? 'Pr ' : 'Dr ')
+    .replace(/\s*[-–,]\s*(?:rpps\s*:?\s*)?\d{8,}.*$/i, '').replace(/[.,;:\s]+$/, '')
+
+  function read(pages) {
+    const all = pages.flatMap(page => page.lines.map(clean).filter(Boolean))
+    if (!all.length) return null
+    // Lignes répétées sur plusieurs pages : en-têtes et pieds de page, jamais du contenu.
+    const seen = new Map()
+    for (const page of pages) for (const line of new Set(page.lines.map(clean))) seen.set(line, (seen.get(line) ?? 0) + 1)
+    const lines = pages.length > 1 ? all.filter(line => seen.get(line) < Math.min(pages.length, 3)) : all
+
+    const found = {title:'', kind:'', date:'', fields:{}}
+
+    // Examen : première ligne courte qui commence par un examen connu ; une ligne en majuscules est préférée.
+    const candidates = []
+    for (const [index, line] of lines.slice(0, 80).entries()) {
+      const text = plain(line).replace(/[^a-z0-9]+/g, ' ').trim()
+      if (line.length > 100 || notTitle.test(plain(line)) || headingOf(line)) continue
+      const kind = imagingStart.test(text) ? 'imaging' : reportStart.test(text) ? 'report' : ''
+      if (kind) candidates.push({index, line, kind, upper:!/\p{Ll}/u.test(line)})
+    }
+    const title = candidates.find(item => item.upper) ?? candidates[0]
+    if (title) {
+      found.title = sentenceCase(title.line.replace(/[\s:.]+$/, '')).slice(0, 160)
+      found.kind = title.kind
+    }
+
+    for (const rule of dateRules) {
+      const line = lines.find(item => { const text = plain(item); return !identity.test(text) && rule.test(text) && dateIn(item) })
+      if (line) { found.date = dateIn(line); break }
+    }
+
+    // Sections : indication et conclusion, jusqu'au titre suivant ou à la formule de politesse.
+    let section = null
+    const parts = {indication:[], conclusion:[]}
+    for (const line of lines) {
+      const heading = headingOf(line)
+      if (heading) {
+        section = heading.key === 'other' || parts[heading.key].length ? null : heading.key
+        if (section && heading.rest) parts[section].push(heading.rest)
+        continue
+      }
+      if (!section) continue
+      if (closing.test(plain(line))) { section = null; continue }
+      if (parts[section].length >= 20) { section = null; continue }
+      parts[section].push(line)
+    }
+    for (const key of ['indication', 'conclusion']) {
+      if (parts[key].length) found.fields[key] = joinLines(parts[key], limits[key])
+    }
+
+    // Médecin demandeur.
+    for (const line of lines) {
+      const m = plain(line).match(/\b(?:a la demande d[ue]|demande par|adresse(?:e)? par|prescrit(?:e)? par|prescripteur\s*:|medecin prescripteur\s*:|medecin traitant\s*:)\s*/)
+      if (!m) continue
+      const name = shortDoctor(line.slice(m.index + m[0].length))
+      if (name) { found.fields.prescriber = name.slice(0, limits.prescriber); break }
+    }
+
+    // Praticien : la signature (dernier médecin cité) ou, à défaut, celui de l'en-tête.
+    const prescriberKey = plain(found.fields.prescriber ?? '').replace(/^dr /, '')
+    const doctors = lines.filter(line => doctor.test(line) && line.length <= 80 && !/demande|adress|prescri|traitant/.test(plain(line)))
+      .map(shortDoctor).filter(name => name.split(' ').length >= 2 && (!prescriberKey || !plain(name).includes(prescriberKey)))
+    if (doctors.length) found.fields.practitioner = doctors.at(-1).slice(0, limits.practitioner)
+
+    // Lieu : premier en-tête qui nomme un centre, un cabinet, une clinique… (sur deux lignes si besoin).
+    for (const [index, line] of lines.slice(0, 15).entries()) {
+      if (!/^(?:centre|cabinet|clinique|polyclinique|hopital|ch[ u]|chu|institut|groupe|scm|selarl|imagerie|maison de sante|service)\b/.test(plain(line))) continue
+      let place = line
+      if (/\b(?:de|du|des|d'|d’|de la|et|en|sur|au|aux)$/i.test(place) && lines[index + 1] && !/\d/.test(lines[index + 1])) place += ' ' + lines[index + 1]
+      found.fields.place = place.replace(/[\s.,:;-]+$/, '').slice(0, limits.place)
+      break
+    }
+
+    for (const [key, value] of Object.entries(found.fields)) if (!value) delete found.fields[key]
+    return found.title || found.date || Object.keys(found.fields).length ? found : null
+  }
+
+  globalThis.CompteRendu = {read}
+})()
 ;
 (() => {
   'use strict'
@@ -2178,6 +2366,10 @@ dialog::backdrop { background: #0d201fb3; }
     }
     if (record.kind === 'history') return fields.category ? Dossier.fieldText('history', 'category', fields.category) : ''
     if (record.kind === 'measure') return Dossier.measureSummary(fields)
+    if (fields.conclusion) {
+      const text = fields.conclusion.replace(/\s+/g, ' ')
+      return text.length > 140 ? text.slice(0, 139).trimEnd() + '…' : text
+    }
     return ''
   }
 
@@ -2909,12 +3101,12 @@ dialog::backdrop { background: #0d201fb3; }
     const body = $('record-body')
     body.replaceChildren(badges)
     if (record.file) body.append(el('p', 'muted small', record.file.name + ' · ' + formatBytes(record.file.bytes.length)))
-    const facts = (Dossier.forms[record.kind]?.fields ?? []).filter(([key]) => record.fields[key])
+    const facts = Dossier.fieldsFor(record.kind).filter(([key]) => record.fields[key])
     if (facts.length) {
       const list = el('dl', 'facts')
       for (const [key, label, type] of facts) {
         list.append(el('dt', '', label.replace(/ \(.*\)$/, '')),
-          el('dd', '', type === 'date' ? formatDate(record.fields[key]) : Dossier.fieldText(record.kind, key, record.fields[key])))
+          el('dd', type === 'textarea' ? 'detail-notes' : '', type === 'date' ? formatDate(record.fields[key]) : Dossier.fieldText(record.kind, key, record.fields[key])))
       }
       body.append(list)
     }
@@ -3098,9 +3290,10 @@ dialog::backdrop { background: #0d201fb3; }
     $('doc-title').placeholder = form?.example ?? 'Bilan du 12 mars, ordonnance, consultation…'
     $('doc-date-label').textContent = biology ? 'Date du prélèvement' : form?.date ?? 'Date du document'
     const extra = $('extra-fields')
-    extra.hidden = !form
-    extra.replaceChildren(...(form?.fields ?? []).map(([key, label, type, example]) => {
-      const input = el(typeof type === 'object' ? 'select' : 'input')
+    const fields = Dossier.fieldsFor(kind)
+    extra.hidden = !fields.length
+    extra.replaceChildren(...fields.map(([key, label, type, example]) => {
+      const input = el(typeof type === 'object' ? 'select' : type === 'textarea' ? 'textarea' : 'input')
       input.dataset.extra = key
       if (typeof type === 'object') {
         for (const [value, text] of Object.entries(type)) input.add(option(value, text))
@@ -3115,10 +3308,13 @@ dialog::backdrop { background: #0d201fb3; }
         if (example) input.placeholder = 'ex. ' + example
       } else {
         input.maxLength = Coffre.fieldRules[kind][key]
+        if (type === 'textarea') input.rows = 3
         if (example) input.placeholder = example
       }
       input.value = values[key] ?? ''
-      return inputField(type === 'number' ? label + ' (' + Dossier.metrics[key].unit + ')' : label, input)
+      const wrapper = inputField(type === 'number' ? label + ' (' + Dossier.metrics[key].unit + ')' : label, input)
+      if (type === 'textarea') wrapper.classList.add('full')
+      return wrapper
     }))
     updateAttachmentUI()
   }
@@ -3132,6 +3328,7 @@ dialog::backdrop { background: #0d201fb3; }
     $('extra-fields').replaceChildren()
     notice('editor-message')
     notice('import-message')
+    notice('report-message')
   }
 
   function openEditor(kind, existing = null) {
@@ -3174,11 +3371,15 @@ dialog::backdrop { background: #0d201fb3; }
   $('doc-kind').addEventListener('change', () => {
     if (!draft) return
     draft.kindChosen = true
-    syncEditorKind()
-    void readAttachedBilan()
+    // Les champs communs aux deux types (imagerie et compte rendu) gardent leur saisie.
+    syncEditorKind(Object.fromEntries(Array.from($('extra-fields').querySelectorAll('[data-extra]'), input => [input.dataset.extra, input.value])))
+    void readAttached()
   })
-  $('doc-lab').addEventListener('change', () => { void readAttachedBilan() })
+  $('doc-lab').addEventListener('change', () => { void readAttached() })
   $('source-choose').addEventListener('click', () => $('source-file').click())
+
+  // Types dont le PDF est lu comme un compte rendu (examen, date, conclusion…) ; les fiches ne le sont pas.
+  const readsReport = kind => kind === 'other' || Boolean(Dossier.documentFields[kind])
 
   function updateAttachmentUI() {
     if (!draft) return
@@ -3191,6 +3392,8 @@ dialog::backdrop { background: #0d201fb3; }
     $('source-choose').textContent = draft.file ? 'Changer de fichier' : 'Choisir un fichier'
     $('source-remove').hidden = !draft.file
     $('reread').hidden = !pdf || $('doc-kind').value !== 'bio'
+    $('report-tools').hidden = !pdf || !readsReport($('doc-kind').value)
+    $('read-report').disabled = draft.loading
     $('editor-submit').disabled = draft.loading
     $('doc-kind').disabled = draft.loading
     $('doc-lab').disabled = draft.loading
@@ -3222,9 +3425,11 @@ dialog::backdrop { background: #0d201fb3; }
       }
       active.file = attachment
       active.changed = true
-      const biology = $('doc-kind').value === 'bio'
-      const detectKind = !active.kindChosen && $('doc-kind').value === 'other'
-      if (Coffre.isPDF(attachment.bytes) && !$('result-editor').children.length && (biology || detectKind)) {
+      notice('report-message')
+      const kind = $('doc-kind').value
+      const biology = kind === 'bio'
+      const detectKind = !active.kindChosen && kind === 'other'
+      if (Coffre.isPDF(attachment.bytes) && (biology ? !$('result-editor').children.length : readsReport(kind))) {
         updateAttachmentUI()
         await extractAttachment(active, detectKind)
         if (draft !== active) return
@@ -3283,35 +3488,87 @@ dialog::backdrop { background: #0d201fb3; }
       multipleDates || unknown.length || unnamed ? 'warn' : '')
   }
 
+  // Texte du PDF joint, lu une seule fois par fichier.
+  async function pagesOf(active) {
+    if (active.pages?.file !== active.file) active.pages = {file:active.file, list:await PdfLocal.extract(active.file.bytes)}
+    return active.pages.list
+  }
+
+  // Bilan : résultats proposés. Autre document : lu comme un compte rendu ; `detectKind` (type non choisi)
+  // reconnaît en plus un bilan de laboratoire, une imagerie ou un autre compte rendu, sans message d'échec.
   async function extractAttachment(active, detectKind = false) {
-    if (!detectKind) notice('import-message', 'Lecture du PDF sur cet appareil…')
+    const biology = $('doc-kind').value === 'bio'
+    const message = biology ? 'import-message' : 'report-message'
+    if (!detectKind) notice(message, 'Lecture du PDF sur cet appareil…')
     try {
-      const pages = await PdfLocal.extract(active.file.bytes)
+      const pages = await pagesOf(active)
       if (draft !== active) return
       if (!pages.some(page => page.lines.some(Boolean))) {
-        if (!detectKind) notice('import-message', 'Ce PDF ne contient pas de texte exploitable. Le fichier peut être archivé et les valeurs saisies à la main.', 'warn')
+        if (!detectKind) {
+          notice(message, biology ? 'Ce PDF ne contient pas de texte exploitable. Le fichier peut être archivé et les valeurs saisies à la main.' :
+            'Ce PDF ne contient pas de texte (document scanné ?). Le fichier peut être archivé et les champs remplis à la main.', 'warn')
+        }
         return
       }
-      const proposed = Lab.parse(pages, detectKind ? 'auto' : $('doc-lab').value)
       if (detectKind) {
-        if (proposed.lab === 'other' || !proposed.rows.length) return
-        $('doc-kind').value = 'bio'
-        syncEditorKind()
+        const proposed = Lab.parse(pages, 'auto')
+        if (proposed.lab !== 'other' && proposed.rows.length) {
+          $('doc-kind').value = 'bio'
+          syncEditorKind()
+          acceptProposals(proposed)
+          return
+        }
       }
-      acceptProposals(proposed)
+      if (biology) acceptProposals(Lab.parse(pages, $('doc-lab').value))
+      else acceptReport(CompteRendu.read(pages), detectKind)
     } catch (error) {
-      if (draft === active && !detectKind) notice('import-message', error.message, 'warn')
+      if (draft === active && !detectKind) notice(message, error.message, 'warn')
     }
   }
 
-  async function readAttachedBilan() {
-    if ($('doc-kind').value !== 'bio' || $('result-editor').children.length) return
+  // Ne remplace jamais une saisie : seuls les champs vides, ou encore égaux à ce qui a été proposé, sont remplis.
+  function acceptReport(report, detectKind) {
+    if (!report) {
+      notice('report-message', detectKind ? '' : 'Aucun élément reconnu dans ce document : complète les champs à la main.', 'warn')
+      return
+    }
+    if (detectKind && report.kind && $('doc-kind').value === 'other') {
+      $('doc-kind').value = report.kind
+      syncEditorKind()
+    }
+    const auto = draft.auto ??= {}
+    const filled = []
+    const put = (key, input, value, label) => {
+      if (!input || !value || (input.value && input.value !== auto[key])) return
+      if (input.value !== value) filled.push(label)
+      input.value = value
+      auto[key] = value
+    }
+    put('title', $('doc-title'), report.title, 'examen')
+    put('date', $('doc-date'), report.date, 'date')
+    const labels = {conclusion:'conclusion', indication:'indication', prescriber:'médecin demandeur', practitioner:'praticien', place:'lieu'}
+    for (const [key, label] of Object.entries(labels)) {
+      put(key, $('extra-fields').querySelector('[data-extra="' + key + '"]'), report.fields[key], label)
+    }
+    if (filled.length) {
+      draft.changed = true
+      notice('report-message', 'Repris du compte rendu : ' + filled.join(', ') + '. Vérifie avec l’original.')
+    } else {
+      notice('report-message', detectKind ? '' : 'Rien de nouveau : les champs déjà remplis sont conservés.')
+    }
+  }
+
+  // Après un changement de type ou de laboratoire : relit le PDF joint si le nouveau type s'y prête.
+  async function readAttached() {
+    const kind = $('doc-kind').value
+    if (kind === 'bio' ? $('result-editor').children.length : !readsReport(kind)) return
     await reread()
   }
 
   async function reread() {
     if (!draft?.file || draft.loading || !Coffre.isPDF(draft.file.bytes)) return
-    if ($('result-editor').children.length && !confirm('Relire le PDF et remplacer les lignes proposées si des résultats sont trouvés ?')) return
+    const biology = $('doc-kind').value === 'bio'
+    if (biology && $('result-editor').children.length && !confirm('Relire le PDF et remplacer les lignes proposées si des résultats sont trouvés ?')) return
     const active = draft
     active.loading = true
     updateAttachmentUI()
@@ -3322,6 +3579,7 @@ dialog::backdrop { background: #0d201fb3; }
     }
   }
   $('reread').addEventListener('click', reread)
+  $('read-report').addEventListener('click', reread)
   $('parse-text').addEventListener('click', () => {
     if (!draft || draft.loading) return
     if (!$('paste-text').value.trim()) { notice('import-message', 'Colle le texte du compte rendu pour lancer la lecture.', 'warn'); return }

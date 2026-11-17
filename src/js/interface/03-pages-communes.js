@@ -63,6 +63,10 @@
     }
     if (record.kind === 'history') return fields.category ? Dossier.fieldText('history', 'category', fields.category) : ''
     if (record.kind === 'measure') return Dossier.measureSummary(fields)
+    if (fields.conclusion) {
+      const text = fields.conclusion.replace(/\s+/g, ' ')
+      return text.length > 140 ? text.slice(0, 139).trimEnd() + '…' : text
+    }
     return ''
   }
 

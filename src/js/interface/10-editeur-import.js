@@ -8,9 +8,10 @@
     $('doc-title').placeholder = form?.example ?? 'Bilan du 12 mars, ordonnance, consultation…'
     $('doc-date-label').textContent = biology ? 'Date du prélèvement' : form?.date ?? 'Date du document'
     const extra = $('extra-fields')
-    extra.hidden = !form
-    extra.replaceChildren(...(form?.fields ?? []).map(([key, label, type, example]) => {
-      const input = el(typeof type === 'object' ? 'select' : 'input')
+    const fields = Dossier.fieldsFor(kind)
+    extra.hidden = !fields.length
+    extra.replaceChildren(...fields.map(([key, label, type, example]) => {
+      const input = el(typeof type === 'object' ? 'select' : type === 'textarea' ? 'textarea' : 'input')
       input.dataset.extra = key
       if (typeof type === 'object') {
         for (const [value, text] of Object.entries(type)) input.add(option(value, text))
@@ -25,10 +26,13 @@
         if (example) input.placeholder = 'ex. ' + example
       } else {
         input.maxLength = Coffre.fieldRules[kind][key]
+        if (type === 'textarea') input.rows = 3
         if (example) input.placeholder = example
       }
       input.value = values[key] ?? ''
-      return inputField(type === 'number' ? label + ' (' + Dossier.metrics[key].unit + ')' : label, input)
+      const wrapper = inputField(type === 'number' ? label + ' (' + Dossier.metrics[key].unit + ')' : label, input)
+      if (type === 'textarea') wrapper.classList.add('full')
+      return wrapper
     }))
     updateAttachmentUI()
   }
@@ -42,6 +46,7 @@
     $('extra-fields').replaceChildren()
     notice('editor-message')
     notice('import-message')
+    notice('report-message')
   }
 
   function openEditor(kind, existing = null) {
@@ -84,11 +89,15 @@
   $('doc-kind').addEventListener('change', () => {
     if (!draft) return
     draft.kindChosen = true
-    syncEditorKind()
-    void readAttachedBilan()
+    // Les champs communs aux deux types (imagerie et compte rendu) gardent leur saisie.
+    syncEditorKind(Object.fromEntries(Array.from($('extra-fields').querySelectorAll('[data-extra]'), input => [input.dataset.extra, input.value])))
+    void readAttached()
   })
-  $('doc-lab').addEventListener('change', () => { void readAttachedBilan() })
+  $('doc-lab').addEventListener('change', () => { void readAttached() })
   $('source-choose').addEventListener('click', () => $('source-file').click())
+
+  // Types dont le PDF est lu comme un compte rendu (examen, date, conclusion…) ; les fiches ne le sont pas.
+  const readsReport = kind => kind === 'other' || Boolean(Dossier.documentFields[kind])
 
   function updateAttachmentUI() {
     if (!draft) return
@@ -101,6 +110,8 @@
     $('source-choose').textContent = draft.file ? 'Changer de fichier' : 'Choisir un fichier'
     $('source-remove').hidden = !draft.file
     $('reread').hidden = !pdf || $('doc-kind').value !== 'bio'
+    $('report-tools').hidden = !pdf || !readsReport($('doc-kind').value)
+    $('read-report').disabled = draft.loading
     $('editor-submit').disabled = draft.loading
     $('doc-kind').disabled = draft.loading
     $('doc-lab').disabled = draft.loading
@@ -132,9 +143,11 @@
       }
       active.file = attachment
       active.changed = true
-      const biology = $('doc-kind').value === 'bio'
-      const detectKind = !active.kindChosen && $('doc-kind').value === 'other'
-      if (Coffre.isPDF(attachment.bytes) && !$('result-editor').children.length && (biology || detectKind)) {
+      notice('report-message')
+      const kind = $('doc-kind').value
+      const biology = kind === 'bio'
+      const detectKind = !active.kindChosen && kind === 'other'
+      if (Coffre.isPDF(attachment.bytes) && (biology ? !$('result-editor').children.length : readsReport(kind))) {
         updateAttachmentUI()
         await extractAttachment(active, detectKind)
         if (draft !== active) return
@@ -193,35 +206,87 @@
       multipleDates || unknown.length || unnamed ? 'warn' : '')
   }
 
+  // Texte du PDF joint, lu une seule fois par fichier.
+  async function pagesOf(active) {
+    if (active.pages?.file !== active.file) active.pages = {file:active.file, list:await PdfLocal.extract(active.file.bytes)}
+    return active.pages.list
+  }
+
+  // Bilan : résultats proposés. Autre document : lu comme un compte rendu ; `detectKind` (type non choisi)
+  // reconnaît en plus un bilan de laboratoire, une imagerie ou un autre compte rendu, sans message d'échec.
   async function extractAttachment(active, detectKind = false) {
-    if (!detectKind) notice('import-message', 'Lecture du PDF sur cet appareil…')
+    const biology = $('doc-kind').value === 'bio'
+    const message = biology ? 'import-message' : 'report-message'
+    if (!detectKind) notice(message, 'Lecture du PDF sur cet appareil…')
     try {
-      const pages = await PdfLocal.extract(active.file.bytes)
+      const pages = await pagesOf(active)
       if (draft !== active) return
       if (!pages.some(page => page.lines.some(Boolean))) {
-        if (!detectKind) notice('import-message', 'Ce PDF ne contient pas de texte exploitable. Le fichier peut être archivé et les valeurs saisies à la main.', 'warn')
+        if (!detectKind) {
+          notice(message, biology ? 'Ce PDF ne contient pas de texte exploitable. Le fichier peut être archivé et les valeurs saisies à la main.' :
+            'Ce PDF ne contient pas de texte (document scanné ?). Le fichier peut être archivé et les champs remplis à la main.', 'warn')
+        }
         return
       }
-      const proposed = Lab.parse(pages, detectKind ? 'auto' : $('doc-lab').value)
       if (detectKind) {
-        if (proposed.lab === 'other' || !proposed.rows.length) return
-        $('doc-kind').value = 'bio'
-        syncEditorKind()
+        const proposed = Lab.parse(pages, 'auto')
+        if (proposed.lab !== 'other' && proposed.rows.length) {
+          $('doc-kind').value = 'bio'
+          syncEditorKind()
+          acceptProposals(proposed)
+          return
+        }
       }
-      acceptProposals(proposed)
+      if (biology) acceptProposals(Lab.parse(pages, $('doc-lab').value))
+      else acceptReport(CompteRendu.read(pages), detectKind)
     } catch (error) {
-      if (draft === active && !detectKind) notice('import-message', error.message, 'warn')
+      if (draft === active && !detectKind) notice(message, error.message, 'warn')
     }
   }
 
-  async function readAttachedBilan() {
-    if ($('doc-kind').value !== 'bio' || $('result-editor').children.length) return
+  // Ne remplace jamais une saisie : seuls les champs vides, ou encore égaux à ce qui a été proposé, sont remplis.
+  function acceptReport(report, detectKind) {
+    if (!report) {
+      notice('report-message', detectKind ? '' : 'Aucun élément reconnu dans ce document : complète les champs à la main.', 'warn')
+      return
+    }
+    if (detectKind && report.kind && $('doc-kind').value === 'other') {
+      $('doc-kind').value = report.kind
+      syncEditorKind()
+    }
+    const auto = draft.auto ??= {}
+    const filled = []
+    const put = (key, input, value, label) => {
+      if (!input || !value || (input.value && input.value !== auto[key])) return
+      if (input.value !== value) filled.push(label)
+      input.value = value
+      auto[key] = value
+    }
+    put('title', $('doc-title'), report.title, 'examen')
+    put('date', $('doc-date'), report.date, 'date')
+    const labels = {conclusion:'conclusion', indication:'indication', prescriber:'médecin demandeur', practitioner:'praticien', place:'lieu'}
+    for (const [key, label] of Object.entries(labels)) {
+      put(key, $('extra-fields').querySelector('[data-extra="' + key + '"]'), report.fields[key], label)
+    }
+    if (filled.length) {
+      draft.changed = true
+      notice('report-message', 'Repris du compte rendu : ' + filled.join(', ') + '. Vérifie avec l’original.')
+    } else {
+      notice('report-message', detectKind ? '' : 'Rien de nouveau : les champs déjà remplis sont conservés.')
+    }
+  }
+
+  // Après un changement de type ou de laboratoire : relit le PDF joint si le nouveau type s'y prête.
+  async function readAttached() {
+    const kind = $('doc-kind').value
+    if (kind === 'bio' ? $('result-editor').children.length : !readsReport(kind)) return
     await reread()
   }
 
   async function reread() {
     if (!draft?.file || draft.loading || !Coffre.isPDF(draft.file.bytes)) return
-    if ($('result-editor').children.length && !confirm('Relire le PDF et remplacer les lignes proposées si des résultats sont trouvés ?')) return
+    const biology = $('doc-kind').value === 'bio'
+    if (biology && $('result-editor').children.length && !confirm('Relire le PDF et remplacer les lignes proposées si des résultats sont trouvés ?')) return
     const active = draft
     active.loading = true
     updateAttachmentUI()
@@ -232,6 +297,7 @@
     }
   }
   $('reread').addEventListener('click', reread)
+  $('read-report').addEventListener('click', reread)
   $('parse-text').addEventListener('click', () => {
     if (!draft || draft.loading) return
     if (!$('paste-text').value.trim()) { notice('import-message', 'Colle le texte du compte rendu pour lancer la lecture.', 'warn'); return }

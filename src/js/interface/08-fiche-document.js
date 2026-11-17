@@ -7,12 +7,12 @@
     const body = $('record-body')
     body.replaceChildren(badges)
     if (record.file) body.append(el('p', 'muted small', record.file.name + ' · ' + formatBytes(record.file.bytes.length)))
-    const facts = (Dossier.forms[record.kind]?.fields ?? []).filter(([key]) => record.fields[key])
+    const facts = Dossier.fieldsFor(record.kind).filter(([key]) => record.fields[key])
     if (facts.length) {
       const list = el('dl', 'facts')
       for (const [key, label, type] of facts) {
         list.append(el('dt', '', label.replace(/ \(.*\)$/, '')),
-          el('dd', '', type === 'date' ? formatDate(record.fields[key]) : Dossier.fieldText(record.kind, key, record.fields[key])))
+          el('dd', type === 'textarea' ? 'detail-notes' : '', type === 'date' ? formatDate(record.fields[key]) : Dossier.fieldText(record.kind, key, record.fields[key])))
       }
       body.append(list)
     }

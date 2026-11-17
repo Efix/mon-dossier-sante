@@ -7,15 +7,17 @@ const {Coffre, Dossier} = charger()
 const vaccin = (id, date, nom, rappel = '', titre = 'Vaccination') =>
   ({id, kind:'vaccine', date, title:titre, fields:{...(nom && {vaccine:nom}), ...(rappel && {booster:rappel})}})
 
-test('chaque formulaire de fiche correspond exactement aux champs admis par le coffre', () => {
-  assert.deepEqual(Object.keys(Dossier.forms).sort(), Object.keys(Coffre.fieldRules).sort())
-  for (const [type, formulaire] of Object.entries(Dossier.forms)) {
+test('chaque formulaire (fiches et comptes rendus) correspond exactement aux champs admis par le coffre', () => {
+  const formulaires = {...Object.fromEntries(Object.entries(Dossier.forms).map(([type, form]) => [type, form.fields])), ...Dossier.documentFields}
+  assert.deepEqual(Object.keys(formulaires).sort(), Object.keys(Coffre.fieldRules).sort())
+  for (const [type, champs] of Object.entries(formulaires)) {
     assert.ok(Coffre.types[type], type)
-    assert.deepEqual(formulaire.fields.map(champ => champ[0]), Object.keys(Coffre.fieldRules[type]), type)
-    for (const [cle, , nature] of formulaire.fields) {
+    assert.deepEqual(Dossier.fieldsFor(type), champs, type)
+    assert.deepEqual(champs.map(champ => champ[0]), Object.keys(Coffre.fieldRules[type]), type)
+    for (const [cle, , nature] of champs) {
       const regle = Coffre.fieldRules[type][cle]
       if (nature === 'date') assert.equal(regle, 'date', cle)
-      else if (nature === 'text') assert.equal(typeof regle, 'number', cle)
+      else if (nature === 'text' || nature === 'textarea') assert.equal(typeof regle, 'number', cle)
       else if (nature === 'number') assert.ok(regle.min < regle.max && Number.isInteger(regle.decimals) && Dossier.metrics[cle], cle)
       else assert.deepEqual(Object.keys(nature), regle, cle)
     }

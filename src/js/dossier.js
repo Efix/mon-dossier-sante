@@ -37,6 +37,18 @@
       fields:Object.entries(metrics).map(([key, metric]) => [key, metric.label, 'number', metric.example])},
   }
 
+  // Champs des comptes rendus (imagerie et autres) : documents de la chronologie, pas des fiches de la fiche santé.
+  // Proposés à l'import d'un PDF par CompteRendu.read, toujours modifiables.
+  const reportFields = [
+    ['conclusion', 'Conclusion', 'textarea', 'Ce que retient le médecin'],
+    ['indication', 'Indication', 'text', 'Motif de l’examen ou de la consultation'],
+    ['prescriber', 'Demandé par', 'text', 'Dr …'],
+    ['practitioner', 'Réalisé par', 'text', 'Dr …'],
+    ['place', 'Lieu', 'text', 'Centre, cabinet, hôpital…'],
+  ]
+  const documentFields = {imaging:reportFields, report:reportFields}
+  const fieldsFor = kind => forms[kind]?.fields ?? documentFields[kind] ?? []
+
   const decimal = new Intl.NumberFormat('fr-FR', {maximumFractionDigits:2})
   const numberOf = value => Number(String(value).replace(',', '.'))
 
@@ -146,6 +158,6 @@
     }).sort((a, b) => rank[a.status] - rank[b.status] || a.booster.localeCompare(b.booster) || a.name.localeCompare(b.name, 'fr'))
   }
 
-  globalThis.Dossier = {forms, metrics, today, addDays, fieldText, ongoing, vaccinations, readMeasure, checkMeasures, measureSummary, measureSeries}
+  globalThis.Dossier = {forms, documentFields, fieldsFor, metrics, today, addDays, fieldText, ongoing, vaccinations, readMeasure, checkMeasures, measureSummary, measureSeries}
 })()
 

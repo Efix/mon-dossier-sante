@@ -27,6 +27,9 @@
     treatment:{dose:160, reason:160, prescriber:120, end:'date'},
     allergy:{reaction:200, severity:['', 'mild', 'moderate', 'severe']},
     history:{category:['', 'medical', 'surgical', 'family']},
+    // Comptes rendus : repris du PDF à l'import (voir compte-rendu.js), ou saisis à la main.
+    imaging:{conclusion:2000, indication:300, prescriber:120, practitioner:120, place:160},
+    report:{conclusion:2000, indication:300, prescriber:120, practitioner:120, place:160},
     // Mesures : nombre à virgule décimale (« 72,5 »), dans les bornes, avec au plus `decimals` décimales.
     measure:{
       weight:{min:0.5, max:400, decimals:2}, height:{min:30, max:250, decimals:1},
@@ -43,6 +46,8 @@
   }
   // Types inconnus du premier format : leur présence fait passer le coffre au format 2.
   const recentKinds = new Set(['treatment', 'allergy', 'history', 'measure'])
+  // Types connus du format 2, mais dont les champs n'existent qu'à partir du format 3.
+  const reportKinds = new Set(['imaging', 'report'])
   const labs = {cerballiance:'Cerballiance', checkup:'Check-Up', other:'Autre laboratoire'}
   const safeName = text => String(text ?? '').replace(/[\u0000-\u001f\u007f<>:"/\\|?*]/g, '_')
     .replace(/[\u202a-\u202e\u2066-\u2069]/g, '').trim().slice(0, 200) || 'document'
@@ -139,7 +144,9 @@
     })
     // Format 2 dès qu'une fiche structurée existe : une ancienne version de l'application refuse alors le coffre
     // au lieu de l'ouvrir en perdant ces données. Sans fiche, le coffre reste lisible partout (format 1).
-    const version = list.some(record => recentKinds.has(record.kind) || Object.keys(record.fields).length) ? 2 : 1
+    // Format 3 dès qu'un compte rendu a des champs : même raison, une version antérieure les perdrait.
+    const version = list.some(record => reportKinds.has(record.kind) && Object.keys(record.fields).length) ? 3 :
+      list.some(record => recentKinds.has(record.kind) || Object.keys(record.fields).length) ? 2 : 1
     const metadata = encoder.encode(JSON.stringify({version, records:list}))
     if (metadata.length + 4 > 16 * MiB || list.length > 15000) throw Error('Le coffre dépasse sa capacité de classement.')
     const length = 4 + metadata.length + list.reduce((total, record) => total + (record.file?.size ?? 0), 0)
@@ -161,7 +168,7 @@
     const limit = 4 + new DataView(buffer).getUint32(0)
     if (limit > buffer.byteLength || limit > 16 * MiB) throw Error('Métadonnées invalides.')
     const data = JSON.parse(decoder.decode(new Uint8Array(buffer, 4, limit - 4)))
-    if ((data.version !== 1 && data.version !== 2) || !Array.isArray(data.records) || data.records.length > 15000) throw Error('Version ou format non reconnu.')
+    if (![1, 2, 3].includes(data.version) || !Array.isArray(data.records) || data.records.length > 15000) throw Error('Version ou format non reconnu.')
     const ids = new Set()
     let offset = limit
     const records = data.records.map(input => {

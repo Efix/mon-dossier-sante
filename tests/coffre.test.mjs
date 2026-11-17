@@ -161,6 +161,19 @@ test('format du coffre : 1 sans fiche (lisible par les anciennes versions), 2 d�
   assert.equal(await formatDe(await Coffre.seal(cle, sel, [fiches()[3]])), 2, 'un type récent suffit, même sans champ rempli')
 })
 
+test('comptes rendus : champs repris, format 3 dès qu’ils sont remplis, limites appliquées', async () => {
+  const imagerie = {id:'i', kind:'imaging', lab:'', date:'2026-04-14', title:'Échographie de la glande thyroïde', notes:'', file:null, results:[],
+    fields:{conclusion:'Thyroïde normale.\n- Pas de nodule.', indication:'Contrôle', prescriber:'Dr DURAND Paul', practitioner:'Dr Claire MARTIN', place:'Centre fictif'}}
+  const scelle = await Coffre.seal(cle, sel, [...fiches(), imagerie])
+  assert.equal(await formatDe(scelle), 3)
+  const {records} = await Coffre.open(scelle.blob, phrase)
+  assert.deepEqual(records.at(-1).fields, imagerie.fields)
+  assert.equal(await formatDe(await Coffre.seal(cle, sel, [{...imagerie, fields:{}}])), 1, 'une imagerie sans champ reste lisible partout')
+  assert.throws(() => Coffre.check({...imagerie, fields:{conclusion:'x'.repeat(2001)}}))
+  assert.throws(() => Coffre.check({...imagerie, fields:{dose:'1 comprimé'}}))
+  assert.doesNotThrow(() => Coffre.check({...imagerie, kind:'report'}))
+})
+
 test('fiches : champs inconnus, valeurs hors liste, dates impossibles et textes trop longs refusés', () => {
   const invalide = (index, modifier) => {
     const fiche = fiches()[index]

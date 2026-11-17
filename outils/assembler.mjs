@@ -14,8 +14,8 @@ import {fileURLToPath} from 'node:url'
 
 import {fichier, sources} from './application.mjs'
 
-// Ordre d'exécution : chaque module expose son objet (Lab, Coffre, Dossier, PdfLocal) au suivant.
-export const modules = ['js/lab.js', 'js/coffre.js', 'js/dossier.js', 'js/pdf-local.js']
+// Ordre d'exécution : chaque module expose son objet (Lab, Coffre, Dossier, CompteRendu, PdfLocal) aux suivants.
+export const modules = ['js/lab.js', 'js/coffre.js', 'js/dossier.js', 'js/compte-rendu.js', 'js/pdf-local.js']
 const dossierInterface = 'js/interface/'
 
 const chemin = relatif => new URL(relatif, sources)

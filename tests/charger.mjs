@@ -18,11 +18,11 @@ export function lireApplication() {
 }
 
 let modules
-// Les trois premiers modules (lecture des bilans, coffre chiffré, fiches) n'ont pas besoin du navigateur.
+// Les quatre premiers modules (bilans, coffre chiffré, fiches, comptes rendus) n'ont pas besoin du navigateur.
 export function charger() {
   if (!modules) {
-    for (const nom of ['js/lab.js', 'js/coffre.js', 'js/dossier.js']) vm.runInThisContext(lireSource(nom), {filename: 'src/' + nom})
-    modules = {Lab:globalThis.Lab, Coffre:globalThis.Coffre, Dossier:globalThis.Dossier}
+    for (const nom of ['js/lab.js', 'js/coffre.js', 'js/dossier.js', 'js/compte-rendu.js']) vm.runInThisContext(lireSource(nom), {filename: 'src/' + nom})
+    modules = {Lab:globalThis.Lab, Coffre:globalThis.Coffre, Dossier:globalThis.Dossier, CompteRendu:globalThis.CompteRendu}
   }
   return modules
 }

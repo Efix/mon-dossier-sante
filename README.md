@@ -18,7 +18,8 @@ L'application livrée reste un seul fichier HTML, mais elle est **assemblée** �
 | `src/style.css` | Apparence |
 | `src/js/lab.js` | Lecture des comptes rendus de laboratoire (`Lab`) |
 | `src/js/coffre.js` | Coffre chiffré : format, chiffrement, relecture avant écriture (`Coffre`) |
-| `src/js/dossier.js` | Fiches, rappels de vaccination, mesures et IMC (`Dossier`) |
+| `src/js/dossier.js` | Fiches, champs des comptes rendus, rappels de vaccination, mesures et IMC (`Dossier`) |
+| `src/js/compte-rendu.js` | Lecture des comptes rendus : examen, date, indication, conclusion, médecins, lieu (`CompteRendu`) |
 | `src/js/pdf-local.js` | Extraction du texte et affichage des PDF (`PdfLocal`) |
 | `src/js/interface/` | Interface, en fragments numérotés d'une même fonction (ils partagent ses variables et ne s'exécutent pas seuls) |
 | `src/vendor/pdfjs/` | PDF.js 4.10.38, tel que publié : ne pas modifier |
@@ -81,7 +82,8 @@ Les tests (Node 22 ou plus récent, sans dépendance) chargent le code depuis `s
 | --- | --- |
 | `tests/fichier.test.mjs` | HTML à jour avec les sources, empreinte CSP, fins de ligne, PDF.js intact, aucune connexion réseau autorisée |
 | `tests/parseur.test.mjs` | Lecture des bilans Cerballiance et Check-Up, nombres, unités, sections d'urines |
-| `tests/coffre.test.mjs` | Chiffrement, relecture avant écriture, limites du format, fiches structurées, changement de phrase secrète |
+| `tests/coffre.test.mjs` | Chiffrement, relecture avant écriture, limites du format, fiches structurées et comptes rendus (formats 1 à 3), changement de phrase secrète |
+| `tests/compte-rendu.test.mjs` | Lecture des comptes rendus d'imagerie et de consultation, date d'examen distinguée de la date de naissance, aucune donnée d'identité reprise |
 | `tests/dossier.test.mjs` | Fiches (allergies, traitements, vaccinations, antécédents), traitements en cours, rappels de vaccination, saisie des mesures et IMC |
 
 Tous les bilans des tests sont fictifs. Pour couvrir un vrai compte rendu, ajoute son texte **anonymisé** dans `tests/parseur.test.mjs` avec les lignes attendues.
