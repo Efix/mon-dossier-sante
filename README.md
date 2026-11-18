@@ -1,93 +1,117 @@
 # Mon dossier santé
 
-Application hors ligne en un seul fichier, `Mon-Dossier-Sante.html`. Les documents et résultats sont conservés dans un coffre chiffré `.sante` que tu gardes sur ton appareil. Aucun compte, aucun réseau.
+**Tes bilans et documents de santé, rangés au même endroit, dans un coffre chiffré qui reste chez toi.**
 
-## Utiliser
+Mon dossier santé est une application gratuite qui fonctionne entièrement dans ton navigateur. Elle n'a ni compte, ni serveur, ni abonnement : tes données ne quittent jamais ton ordinateur.
 
-Ouvre `Mon-Dossier-Sante.html` dans Edge ou Chrome, puis choisis ton fichier `.sante`. Le fichier se télécharge aussi depuis le [site](https://efix.github.io/mon-dossier-sante/), sans rien construire.
+**[Télécharger l'application](https://efix.github.io/mon-dossier-sante/)** · [Essayer en ligne](https://efix.github.io/mon-dossier-sante/) · [Code source](https://github.com/Efix/mon-dossier-sante)
 
-L'application indique sa version en bas de l'écran d'accueil et dans la page Coffre. « Rechercher une mise à jour » ouvre la page d'accueil du site, qui dit si une version plus récente existe : l'application elle-même ne se connecte jamais. Une mise à jour ne remplace que le fichier HTML ; le coffre ne change pas.
+---
 
-Le fichier `.sante` n'est jamais versionné (voir `.gitignore`) : sa sauvegarde reste à ta charge, par le bouton « Télécharger une copie chiffrée » de la page Coffre.
+## Ce que tu peux faire
 
-## Organisation du code
+- **Importer tes bilans de laboratoire en PDF.** L'application lit les résultats (analyse, valeur, unité, valeurs de référence) et te les propose. Tu les vérifies avant de les ajouter. La lecture automatique reconnaît les comptes rendus Cerballiance et Check-Up ; pour les autres laboratoires, tu saisis ou corriges les valeurs toi-même.
+- **Suivre l'évolution de tes résultats.** « Mon suivi biologique » trace chaque analyse dans le temps, bilan après bilan.
+- **Classer tes autres documents.** Ordonnances, imagerie, comptes rendus de consultation, notes. Pour un compte rendu en PDF, l'application propose l'examen, la date, la conclusion et les médecins ; tu corriges si besoin.
+- **Tenir ta fiche santé à jour.** Allergies, traitements en cours, vaccinations avec rappel du prochain vaccin, antécédents médicaux, chirurgicaux et familiaux.
+- **Noter tes mesures.** Poids, taille et IMC, tension, pouls, température, saturation en oxygène.
+- **Retrouver tout dans une chronologie.** Chaque document garde son PDF d'origine, consultable dans l'application.
 
-L'application livrée reste un seul fichier HTML, mais elle est **assemblée** à partir des sources de `src/` : on ne modifie plus le HTML à la main.
+## Ce qu'elle ne fait pas
 
-| Source | Rôle |
+- **Elle ne donne pas d'avis médical.** Elle range et affiche tes documents ; l'interprétation de tes résultats reste celle de ton médecin.
+- **Elle ne synchronise rien.** Pas de cloud, pas de partage, pas de sauvegarde automatique ailleurs que sur ton appareil. C'est voulu : rien ne sort de ton ordinateur sans que tu le décides.
+- **Elle ne peut pas récupérer une phrase secrète oubliée.** Personne ne le peut, pas même l'auteur de l'application. Voir [Ta phrase secrète](#ta-phrase-secrète).
+
+## Démarrer
+
+1. **Télécharge l'application** depuis [le site](https://efix.github.io/mon-dossier-sante/). C'est un seul fichier, `Mon-Dossier-Sante-vX.Y.Z.html`, de quelques mégaoctets. Rien à installer.
+2. **Ouvre-le dans Microsoft Edge ou Google Chrome**, sur ordinateur : double-clic, ou glisser le fichier dans le navigateur. Il fonctionne sans connexion Internet.
+3. **Crée ton coffre** : choisis une phrase secrète, puis l'emplacement du fichier `Dossier-sante.sante`. Ce fichier contient tout ton dossier, chiffré.
+4. **Ajoute tes documents.** Ils sont enregistrés dans le coffre au fur et à mesure.
+
+Les fois suivantes, ouvre l'application, clique sur « Choisir un coffre », sélectionne ton fichier `.sante` et saisis ta phrase secrète.
+
+### Navigateurs
+
+| Navigateur | Utilisation |
 | --- | --- |
-| `src/page.html` | Gabarit : structure des pages et des fenêtres, balise Content-Security-Policy |
-| `src/style.css` | Apparence |
-| `src/js/lab.js` | Lecture des comptes rendus de laboratoire (`Lab`) |
-| `src/js/coffre.js` | Coffre chiffré : format, chiffrement, relecture avant écriture (`Coffre`) |
-| `src/js/dossier.js` | Fiches, champs des comptes rendus, rappels de vaccination, mesures et IMC (`Dossier`) |
-| `src/js/compte-rendu.js` | Lecture des comptes rendus : examen, date, indication, conclusion, médecins, lieu (`CompteRendu`) |
-| `src/js/pdf-local.js` | Extraction du texte et affichage des PDF (`PdfLocal`) |
-| `src/js/interface/` | Interface, en fragments numérotés d'une même fonction (ils partagent ses variables et ne s'exécutent pas seuls) |
-| `src/vendor/pdfjs/` | PDF.js 4.10.38, tel que publié : ne pas modifier |
-| `package.json` | `version` : numéro affiché par l'application ; `homepage` : adresse https du site, vers laquelle une version téléchargée cherche ses mises à jour |
+| Edge ou Chrome, sur ordinateur | Recommandé. Le coffre est enregistré directement dans son fichier, à chaque modification. |
+| Firefox, Safari | Moins testés. Ces navigateurs ne permettent pas d'écrire dans un fichier existant : chaque enregistrement télécharge une nouvelle copie du coffre, et c'est à toi de garder la plus récente. |
+| Téléphone, tablette | Non prévu. L'affichage et la gestion des fichiers ne sont pas adaptés. |
 
-Les modules s'exécutent dans l'ordre du tableau, chacun pouvant utiliser les précédents. Les fragments de l'interface sont assemblés dans l'ordre de leur numéro.
+## Tes données et ta sécurité
 
-Outils : `outils/assembler.mjs` construit le HTML ; `outils/publier.mjs` et `outils/accueil.mjs` préparent le site ; `.github/workflows/pages.yml` le publie sur GitHub Pages.
+**Tout reste sur ton appareil.** L'application est une page web autonome : elle ne contient aucun traceur, ne charge aucune ressource extérieure et s'interdit toute connexion réseau. Cette interdiction est inscrite dans la page elle-même, et c'est le navigateur qui l'applique.
 
-## Modifier
+**Ton coffre est chiffré.** Le fichier `.sante` est chiffré en AES-256-GCM. La clé est dérivée de ta phrase secrète par PBKDF2-SHA-256, avec 600 000 itérations, ce qui rend les essais de phrases très lents. Sans la phrase, le fichier est illisible, même s'il est copié sur une clé USB, envoyé par erreur ou stocké dans un cloud.
 
-Après chaque modification dans `src/` :
+**Il se verrouille tout seul.** Après dix minutes d'inactivité, l'application referme le dossier et oublie la clé : il faut de nouveau la phrase secrète pour le rouvrir. Le bouton « Verrouiller » le fait immédiatement.
 
-```bash
-npm run build
+**Chaque enregistrement est relu.** Avant de remplacer ton fichier, l'application vérifie que le nouveau coffre se déchiffre correctement. Elle refuse aussi d'écraser un coffre qui a été modifié ailleurs entre-temps.
+
+### Ta phrase secrète
+
+Elle est la seule clé de ton coffre. **Si tu l'oublies, ton dossier est perdu**, sauvegardes comprises.
+
+- Choisis une phrase longue, d'au moins 15 caractères, par exemple quatre ou cinq mots sans rapport entre eux.
+- Note-la dans un gestionnaire de mots de passe, ou sur papier rangé en lieu sûr.
+- Tu peux la changer dans la page **Coffre**. Les anciennes sauvegardes gardent l'ancienne phrase.
+
+### Sauvegardes
+
+Le coffre n'existe qu'à l'endroit où tu l'as enregistré. Un disque qui casse ou un ordinateur perdu, et il disparaît avec.
+
+Dans la page **Coffre**, « Télécharger une copie chiffrée » crée une sauvegarde complète. Garde-en une copie ailleurs : clé USB, disque externe, ou service de stockage en ligne. Comme la copie est chiffrée, elle est protégée là où tu la ranges, tant que ta phrase secrète est solide.
+
+## Mettre à jour
+
+Dans la page **Coffre**, « Rechercher une mise à jour » ouvre le site, qui t'indique si une version plus récente existe. L'application elle-même ne se connecte jamais : c'est toi qui suis le lien.
+
+Pour mettre à jour, télécharge la nouvelle version et ouvre ton coffre avec. **Ton coffre ne change pas** : seul le fichier de l'application est remplacé. Garde l'ancien fichier quelques jours, puis supprime-le.
+
+Une ancienne version de l'application peut ne pas savoir lire un coffre enregistré par une version plus récente. Après une mise à jour, utilise donc toujours la nouvelle.
+
+## Vérifier le fichier téléchargé
+
+Chaque version publiée a une empreinte SHA-256, affichée sur le site et inscrite une fois pour toutes dans [`versions-publiees.txt`](versions-publiees.txt). Si l'empreinte de ton fichier est identique, il est exactement celui publié ici, octet pour octet.
+
+Dans le dossier de téléchargement, en remplaçant le nom par celui de ton fichier, sous Windows (PowerShell) :
+
+```powershell
+Get-FileHash .\Mon-Dossier-Sante-v1.1.0.html
 ```
 
-```bash
-npm test
-```
-
-`npm run build` vérifie la syntaxe de chaque source, assemble `Mon-Dossier-Sante.html` et recalcule l'empreinte du script dans la Content-Security-Policy. Sans cette empreinte à jour, le navigateur refuse d'exécuter le script et la page reste inerte, sans message.
-
-Un crochet `pre-commit` refuse un commit dont le HTML ne correspond plus aux sources. Sur un nouveau clone, il s'active avec `git config core.hooksPath .githooks`. Les noms du fichier livré et du dossier des sources sont définis une seule fois, dans `outils/application.mjs`.
-
-## Site et téléchargement
-
-L'application est publiée sur **https://efix.github.io/mon-dossier-sante/** par GitHub Pages, directement depuis ce dépôt : il n'y a aucun serveur à gérer. La page d'accueil propose la dernière version :
-
-- **Télécharger** (`/v1.1.0/Mon-Dossier-Sante-v1.1.0.html`) : un seul fichier HTML, à ouvrir depuis le disque, hors ligne. C'est la façon recommandée : une fois vérifié, le fichier ne change plus ;
-- **Essayer en ligne** (`/v1.1.0/`) : rien à installer, mais chaque visite fait confiance au site qui envoie la page.
-
-Venue de l'application (« Rechercher une mise à jour », `/?depuis=1.0.0`), elle indique si une version plus récente existe. Comme l'application, elle ne se connecte à rien.
-
-**Ce qui garantit le code publié.**
-
-- Le site est construit par GitHub (`.github/workflows/pages.yml`) à chaque envoi sur `main`, à partir des tags `vX.Y.Z` : le fichier de chaque version est exactement celui de son tag.
-- `versions-publiees.txt` note l'empreinte SHA-256 de chaque version à sa première publication. Si un tag déplacé donnait un autre contenu, la construction échoue et le site n'est pas mis à jour.
-- Ce registre est public : on vérifie un fichier téléchargé en calculant son empreinte sur son propre appareil (`Get-FileHash`, `shasum -a 256`, ou `sha256sum -c --ignore-missing SHA256SUMS`).
-- GitHub Pages n'envoie pas d'en-têtes de sécurité : chaque page porte sa propre Content-Security-Policy (aucune connexion), et l'application refuse de s'ouvrir dans le cadre d'un autre site.
-
-**Publier une version**, depuis un dépôt propre (`patch` pour une correction, `minor` pour une nouveauté) :
+Sous macOS ou Linux :
 
 ```bash
-npm version minor -m "Version %s"
+shasum -a 256 Mon-Dossier-Sante-v1.1.0.html
 ```
 
-```bash
-git push --follow-tags
-```
+Le site est construit automatiquement par GitHub à partir de ce dépôt : le code que tu télécharges est celui que tu peux lire ici.
 
-`npm version` vérifie les sources et les tests, met à jour le numéro dans `package.json`, reconstruit le HTML, commite et pose le tag, puis note l'empreinte de la nouvelle version au registre et commite celui-ci. L'envoi déclenche la construction du site. Une version dont l'application n'affiche pas le numéro de son tag est refusée. `npm run publier` prépare le même site dans `publication/` (non versionné) pour un essai local.
+## Questions fréquentes
 
-`homepage` dans `package.json` est l'adresse du site : une version téléchargée y cherche ses mises à jour. Si le site change d'adresse, les versions déjà téléchargées continueront de pointer vers l'ancienne.
+**Mon laboratoire n'est pas reconnu. Que faire ?**
+Importe le PDF comme bilan : il est conservé dans le coffre, et tu saisis les résultats qui t'intéressent dans le tableau. Tu peux aussi le classer comme « Autre document ».
 
-## Tests
+**Puis-je utiliser mon coffre sur deux ordinateurs ?**
+Oui : copie le fichier `.sante` et l'application sur l'autre ordinateur. Mais il n'y a pas de synchronisation : si tu modifies les deux copies, elles divergent. Travaille sur une seule à la fois.
 
-Les tests (Node 22 ou plus récent, sans dépendance) chargent le code depuis `src/`, et vérifient que le HTML livré en est exactement l'assemblage.
+**Que se passe-t-il si je ferme le navigateur sans enregistrer ?**
+Avec Edge ou Chrome, chaque modification est enregistrée dans le fichier aussitôt faite. Avec un autre navigateur, l'application te prévient tant qu'une modification n'a pas été téléchargée.
 
-| Fichier | Vérifie |
-| --- | --- |
-| `tests/fichier.test.mjs` | HTML à jour avec les sources, empreinte CSP, fins de ligne, PDF.js intact, aucune connexion réseau autorisée |
-| `tests/parseur.test.mjs` | Lecture des bilans Cerballiance et Check-Up, nombres, unités, sections d'urines |
-| `tests/coffre.test.mjs` | Chiffrement, relecture avant écriture, limites du format, fiches structurées et comptes rendus (formats 1 à 3), changement de phrase secrète |
-| `tests/compte-rendu.test.mjs` | Lecture des comptes rendus d'imagerie et de consultation, date d'examen distinguée de la date de naissance, aucune donnée d'identité reprise |
-| `tests/publication.test.mjs` | Version déclarée par l'application, page d'accueil du site : script autorisé par sa CSP, aucune connexion, liens de téléchargement et d'ouverture, empreinte |
-| `tests/dossier.test.mjs` | Fiches (allergies, traitements, vaccinations, antécédents), traitements en cours, rappels de vaccination, saisie des mesures et IMC |
+**Faut-il faire confiance à la version en ligne ?**
+Elle est identique à la version téléchargeable. Mais à chaque visite, ton navigateur la reçoit à nouveau du site. Le fichier téléchargé, lui, ne change plus une fois vérifié : c'est l'usage recommandé pour un dossier de santé.
 
-Tous les bilans des tests sont fictifs. Pour couvrir un vrai compte rendu, ajoute son texte **anonymisé** dans `tests/parseur.test.mjs` avec les lignes attendues.
+## Avertissement
+
+Mon dossier santé est un outil personnel d'organisation. Ce n'est pas un dispositif médical. Les valeurs lues dans les PDF sont des propositions : compare-les toujours au document d'origine. Pour toute question sur ta santé ou tes résultats, adresse-toi à un professionnel de santé.
+
+## Signaler un problème
+
+Ouvre un ticket dans l'onglet [Issues](https://github.com/Efix/mon-dossier-sante/issues) du dépôt. **N'y joins jamais un vrai document médical, un coffre ou une capture contenant tes données** : les tickets sont publics. Si un compte rendu est mal lu, décris sa mise en page ou fournis un exemple dont tu as remplacé toutes les informations personnelles.
+
+## Contribuer
+
+L'organisation du code, la construction de l'application, les tests et la publication des versions sont décrits dans [DEVELOPPEMENT.md](DEVELOPPEMENT.md).
