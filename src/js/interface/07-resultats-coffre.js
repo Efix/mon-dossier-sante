@@ -106,7 +106,16 @@
     const secret = el('section', 'panel')
     secret.append(el('h2', '', 'Phrase secrète'), el('p', 'muted', 'Remplace la phrase qui protège le coffre. La phrase actuelle te sera demandée.'),
       button('Changer la phrase secrète', openRekey))
-    grid.append(device, copies, secret)
+    const application = el('section', 'panel')
+    application.append(el('h2', '', 'Application'), el('p', 'muted', !appVersion ? 'Version non indiquée.' : online ?
+      'Version ' + appVersion + ', ouverte en ligne depuis ' + location.host + '. Le coffre reste sur cet appareil.' :
+      'Version ' + appVersion + ', ouverte depuis un fichier de cet appareil.'))
+    if (updateUrl) application.append(updateLink(el('a', 'secondary link-button')))
+    else application.append(el('p', 'small muted', 'Pour mettre à jour, télécharge la nouvelle version là où tu as obtenu ce fichier.'))
+    application.append(el('p', 'small muted', online ?
+      'La page d’accueil du site mène toujours à la dernière version. Une version téléchargée s’ouvre depuis ton disque, sans connexion.' :
+      'Une mise à jour ne remplace que ce fichier HTML : ouvre ton coffre .sante avec la nouvelle version. Garde-la ensuite, car une version plus ancienne peut ne pas relire un coffre enregistré par une plus récente.'))
+    grid.append(device, copies, secret, application)
     const help = el('section', 'panel help-panel')
     help.append(el('h2', '', 'Chiffrement et import'),
       el('p', 'muted', 'Le fichier .sante contient les documents et les résultats chiffrés. L’application s’ouvre hors ligne, sans compte. Le coffre se verrouille après dix minutes d’inactivité.'),

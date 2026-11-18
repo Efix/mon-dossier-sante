@@ -7,5 +7,5 @@ anciennes-versions/
 node_modules/
 .claude/
 
-# Pages produites par « npm run publier » pour l'image Docker.
+# Site produit par « npm run publier » (essai local ; GitHub le reconstruit pour la publication).
 publication/

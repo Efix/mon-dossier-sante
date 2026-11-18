@@ -7,12 +7,14 @@
 //   {{base64:chemin}}    un fichier de src/, encodé en base64 (PDF.js, gardé tel que publié)
 //   {{script}}           les modules de src/js/, puis les fragments de src/js/interface/
 //   {{empreinte}}        l'empreinte sha256 du script, seule autorisée par la Content-Security-Policy
+//   {{version}}          le numéro de version de package.json (« version »)
+//   {{site}}             l'adresse du site où trouver les mises à jour (« homepage » de package.json), ou rien
 import fs from 'node:fs'
 import crypto from 'node:crypto'
 import vm from 'node:vm'
 import {fileURLToPath} from 'node:url'
 
-import {fichier, sources} from './application.mjs'
+import {fichier, sources, paquet} from './application.mjs'
 
 // Ordre d'exécution : chaque module expose son objet (Lab, Coffre, Dossier, CompteRendu, PdfLocal) aux suivants.
 export const modules = ['js/lab.js', 'js/coffre.js', 'js/dossier.js', 'js/compte-rendu.js', 'js/pdf-local.js']
@@ -54,20 +56,34 @@ function inserer(texte, marque, valeur) {
   return morceaux[0] + valeur + morceaux[1]
 }
 
+// Version et site sont hors du script : changer de version ne change pas l'empreinte de la CSP.
+export function identite() {
+  const {version = '', homepage = ''} = JSON.parse(fs.readFileSync(paquet, 'utf8'))
+  if (!/^\d+\.\d+\.\d+$/.test(version)) throw Error(`package.json : « version » doit être de la forme 1.2.3 (trouvé « ${version} »).`)
+  const site = homepage.replace(/\/+$/, '')
+  if (site && !/^https:\/\/[a-z0-9.-]+(?::\d+)?(?:\/[\w.~-]+)*$/i.test(site)) {
+    throw Error(`package.json : « homepage » doit être l'adresse https:// du site de l'application, ou rester vide (trouvé « ${homepage} »).`)
+  }
+  return {version, site}
+}
+
 export function assembler() {
   controlerSyntaxe()
+  const {version, site} = identite()
   const script = [...modules.map(lireSource), interfaceComplete()].join(';\n')
   if (script.includes('</script')) throw Error('Le script ne doit pas contenir « </script » : la page serait coupée à cet endroit.')
   const empreinte = 'sha256-' + crypto.createHash('sha256').update(script, 'utf8').digest('base64')
 
   let html = lireSource('page.html')
   html = inserer(html, '{{empreinte}}', empreinte)
+  html = inserer(html, '{{version}}', version)
+  html = inserer(html, '{{site}}', site)
   html = inserer(html, '{{style.css}}', lireSource('style.css'))
   for (const [marque, relatif] of [...html.matchAll(/\{\{base64:([^}]+)\}\}/g)]) {
     html = inserer(html, marque, fs.readFileSync(chemin(relatif)).toString('base64'))
   }
   html = inserer(html, '{{script}}', script)
-  return {html, script, empreinte}
+  return {html, script, empreinte, version, site}
 }
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === fs.realpathSync(process.argv[1])) {

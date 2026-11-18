@@ -2,9 +2,11 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-eIW3YrYc30AQi7cGs+y54jF0JVvlrD+vvhtH9FdxdxM=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-e70gSSsFFwD5oKtAU+BhSDSybRyAjYYpxz3pzlClw78=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
+  <meta name="application-version" content="1.0.0">
+  <meta name="application-site" content="https://efix.github.io/mon-dossier-sante">
   <title>Mon dossier santé</title>
   <style>:root {
   color-scheme: light;
@@ -48,6 +50,19 @@ textarea:focus-visible, select:focus-visible {
 .text-button { background: transparent; }
 .danger { color: #8a3025; }
 .danger:not(:disabled):hover { background: #fae7e3; }
+.link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  padding: 10px 15px;
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  font-weight: 650;
+  line-height: 1.2;
+  color: inherit;
+  text-decoration: none;
+}
 .compact { min-height: 37px; padding: 7px 11px; font-size: .86rem; }
 input:not([type=checkbox]), select, textarea {
   width: 100%;
@@ -107,6 +122,7 @@ p { line-height: 1.55; }
 .intro h1 { font-size: clamp(2.5rem, 4.6vw, 4.65rem); letter-spacing: -.065em; }
 .intro p { color: #d7ecde; max-width: 37ch; font-size: clamp(1rem, 1.45vw, 1.19rem); }
 .welcome-bottom { color: #d7ecde; font-size: .86rem; padding-top: 20px; }
+.welcome-bottom a { color: #fff; margin-left: 6px; }
 .welcome-main { display: grid; align-content: center; justify-items: center; padding: 38px 24px; }
 .sign-in {
   width: min(100%, 412px);
@@ -359,7 +375,7 @@ dialog::backdrop { background: #0d201fb3; }
         <h1>Tes bilans et<br>documents de santé</h1>
         <p>Retrouve tes résultats d’analyses et leurs PDF d’origine dans un coffre chiffré que tu gardes sur ton appareil.</p>
       </div>
-      <div class="welcome-bottom">Application hors ligne</div>
+      <div class="welcome-bottom"><span id="app-version">Application hors ligne</span> <a id="update-link" target="_blank" rel="noopener noreferrer" hidden></a></div>
     </div>
     <main class="welcome-main">
       <div class="sign-in">
@@ -1962,6 +1978,13 @@ dialog::backdrop { background: #0d201fb3; }
 (() => {
   'use strict'
 
+  // Le site ne peut pas interdire l'affichage dans un cadre (GitHub Pages n'envoie pas d'en-tête de
+  // sécurité) : l'application refuse elle-même de s'ouvrir dans la page d'un autre site.
+  if (window.top !== window.self) {
+    document.body.textContent = 'Mon dossier santé ne s’ouvre que dans son propre onglet.'
+    throw Error('Application ouverte dans un cadre : arrêt.')
+  }
+
   const $ = id => document.getElementById(id)
   const el = (tag, className = '', text = '') => {
     const item = document.createElement(tag)
@@ -1991,6 +2014,25 @@ dialog::backdrop { background: #0d201fb3; }
   const formatBytes = bytes => new Intl.NumberFormat('fr-FR', {maximumFractionDigits:1}).format(bytes / (1024 * 1024)) + ' Mo'
   const chronological = (a, b) => b.date.localeCompare(a.date)
   const idleMs = 10 * 60 * 1000
+
+  // Version et mises à jour. L'application ne se connecte jamais : le lien ouvre, sur demande, la page
+  // d'accueil du site, qui indique si une version plus récente existe. En ligne, c'est le dossier parent
+  // de celui de la version (/vX.Y.Z/) ; pour un fichier local, l'adresse notée à la construction.
+  const meta = name => document.querySelector(`meta[name="${name}"]`)?.content ?? ''
+  const appVersion = meta('application-version')
+  const online = location.protocol === 'https:' || location.protocol === 'http:'
+  const query = '?depuis=' + encodeURIComponent(appVersion)
+  const updateUrl = !appVersion ? '' : online ? new URL('../' + query, location.href).href :
+    meta('application-site') ? meta('application-site') + '/' + query : ''
+  const updateLabel = online ? 'Télécharger pour un usage hors ligne' : 'Rechercher une mise à jour'
+  const updateLink = (target = el('a')) => {
+    target.href = updateUrl
+    target.target = '_blank'
+    target.rel = 'noopener noreferrer'
+    target.textContent = updateLabel
+    target.hidden = !updateUrl
+    return target
+  }
 
   let session = null
   let pendingOpen = null
@@ -3026,7 +3068,16 @@ dialog::backdrop { background: #0d201fb3; }
     const secret = el('section', 'panel')
     secret.append(el('h2', '', 'Phrase secrète'), el('p', 'muted', 'Remplace la phrase qui protège le coffre. La phrase actuelle te sera demandée.'),
       button('Changer la phrase secrète', openRekey))
-    grid.append(device, copies, secret)
+    const application = el('section', 'panel')
+    application.append(el('h2', '', 'Application'), el('p', 'muted', !appVersion ? 'Version non indiquée.' : online ?
+      'Version ' + appVersion + ', ouverte en ligne depuis ' + location.host + '. Le coffre reste sur cet appareil.' :
+      'Version ' + appVersion + ', ouverte depuis un fichier de cet appareil.'))
+    if (updateUrl) application.append(updateLink(el('a', 'secondary link-button')))
+    else application.append(el('p', 'small muted', 'Pour mettre à jour, télécharge la nouvelle version là où tu as obtenu ce fichier.'))
+    application.append(el('p', 'small muted', online ?
+      'La page d’accueil du site mène toujours à la dernière version. Une version téléchargée s’ouvre depuis ton disque, sans connexion.' :
+      'Une mise à jour ne remplace que ce fichier HTML : ouvre ton coffre .sante avec la nouvelle version. Garde-la ensuite, car une version plus ancienne peut ne pas relire un coffre enregistré par une plus récente.'))
+    grid.append(device, copies, secret, application)
     const help = el('section', 'panel help-panel')
     help.append(el('h2', '', 'Chiffrement et import'),
       el('p', 'muted', 'Le fichier .sante contient les documents et les résultats chiffrés. L’application s’ouvre hors ligne, sans compte. Le coffre se verrouille après dix minutes d’inactivité.'),
@@ -3701,6 +3752,8 @@ dialog::backdrop { background: #0d201fb3; }
     }
   })
 
+  if (appVersion) $('app-version').textContent = (online ? 'Version en ligne ' : 'Application hors ligne · version ') + appVersion
+  updateLink($('update-link'))
   for (const [key, label] of Object.entries(Coffre.types)) $('doc-kind').add(option(key, label))
   for (const [key, label] of Object.entries(Coffre.labs)) $('doc-lab').add(option(key, label))
   for (const [, label] of Lab.markers) $('marker-names').append(option(label, label))

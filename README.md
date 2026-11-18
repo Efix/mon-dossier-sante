@@ -4,7 +4,9 @@ Application hors ligne en un seul fichier, `Mon-Dossier-Sante.html`. Les documen
 
 ## Utiliser
 
-Ouvre `Mon-Dossier-Sante.html` dans Edge ou Chrome, puis choisis ton fichier `.sante`.
+Ouvre `Mon-Dossier-Sante.html` dans Edge ou Chrome, puis choisis ton fichier `.sante`. Le fichier se télécharge aussi depuis le [site](https://efix.github.io/mon-dossier-sante/), sans rien construire.
+
+L'application indique sa version en bas de l'écran d'accueil et dans la page Coffre. « Rechercher une mise à jour » ouvre la page d'accueil du site, qui dit si une version plus récente existe : l'application elle-même ne se connecte jamais. Une mise à jour ne remplace que le fichier HTML ; le coffre ne change pas.
 
 Le fichier `.sante` n'est jamais versionné (voir `.gitignore`) : sa sauvegarde reste à ta charge, par le bouton « Télécharger une copie chiffrée » de la page Coffre.
 
@@ -23,8 +25,11 @@ L'application livrée reste un seul fichier HTML, mais elle est **assemblée** �
 | `src/js/pdf-local.js` | Extraction du texte et affichage des PDF (`PdfLocal`) |
 | `src/js/interface/` | Interface, en fragments numérotés d'une même fonction (ils partagent ses variables et ne s'exécutent pas seuls) |
 | `src/vendor/pdfjs/` | PDF.js 4.10.38, tel que publié : ne pas modifier |
+| `package.json` | `version` : numéro affiché par l'application ; `homepage` : adresse https du site, vers laquelle une version téléchargée cherche ses mises à jour |
 
 Les modules s'exécutent dans l'ordre du tableau, chacun pouvant utiliser les précédents. Les fragments de l'interface sont assemblés dans l'ordre de leur numéro.
+
+Outils : `outils/assembler.mjs` construit le HTML ; `outils/publier.mjs` et `outils/accueil.mjs` préparent le site ; `.github/workflows/pages.yml` le publie sur GitHub Pages.
 
 ## Modifier
 
@@ -42,55 +47,35 @@ npm test
 
 Un crochet `pre-commit` refuse un commit dont le HTML ne correspond plus aux sources. Sur un nouveau clone, il s'active avec `git config core.hooksPath .githooks`. Les noms du fichier livré et du dossier des sources sont définis une seule fois, dans `outils/application.mjs`.
 
-## Version web
+## Site et téléchargement
 
-La même application peut être servie en ligne, par une image Docker (`deploiement/`). Le serveur n'envoie que la page : le coffre reste sur l'appareil de la personne, et la page s'interdit toute connexion réseau.
+L'application est publiée sur **https://efix.github.io/mon-dossier-sante/** par GitHub Pages, directement depuis ce dépôt : il n'y a aucun serveur à gérer. La page d'accueil propose la dernière version :
 
-**Ce qu'il faut savoir.** En local, le code ne change que si tu changes le fichier. En ligne, celui qui contrôle le serveur pourrait servir une page modifiée. D'où trois garanties :
+- **Télécharger** (`/v1.1.0/Mon-Dossier-Sante-v1.1.0.html`) : un seul fichier HTML, à ouvrir depuis le disque, hors ligne. C'est la façon recommandée : une fois vérifié, le fichier ne change plus ;
+- **Essayer en ligne** (`/v1.1.0/`) : rien à installer, mais chaque visite fait confiance au site qui envoie la page.
 
-- chaque version a sa propre adresse (`/v1.0.0/`), dont le contenu ne change jamais ;
-- son empreinte SHA-256 est affichée sur la page d'accueil et dans `/SHA256SUMS` : une page enregistrée depuis le site doit avoir exactement cette empreinte, et s'utilise ensuite hors ligne ;
-- `deploiement/versions-publiees.txt` note l'empreinte de chaque version à sa première publication : si un tag déplacé donnait un autre contenu, `npm run publier` refuse.
+Venue de l'application (« Rechercher une mise à jour », `/?depuis=1.0.0`), elle indique si une version plus récente existe. Comme l'application, elle ne se connecte à rien.
 
-**Installer sur une machine qui a Docker** (ni Node ni npm nécessaires) :
+**Ce qui garantit le code publié.**
+
+- Le site est construit par GitHub (`.github/workflows/pages.yml`) à chaque envoi sur `main`, à partir des tags `vX.Y.Z` : le fichier de chaque version est exactement celui de son tag.
+- `versions-publiees.txt` note l'empreinte SHA-256 de chaque version à sa première publication. Si un tag déplacé donnait un autre contenu, la construction échoue et le site n'est pas mis à jour.
+- Ce registre est public : on vérifie un fichier téléchargé en calculant son empreinte sur son propre appareil (`Get-FileHash`, `shasum -a 256`, ou `sha256sum -c --ignore-missing SHA256SUMS`).
+- GitHub Pages n'envoie pas d'en-têtes de sécurité : chaque page porte sa propre Content-Security-Policy (aucune connexion), et l'application refuse de s'ouvrir dans le cadre d'un autre site.
+
+**Publier une version**, depuis un dépôt propre (`patch` pour une correction, `minor` pour une nouveauté) :
 
 ```bash
-git clone https://github.com/Efix/mon-dossier-sante.git
+npm version minor -m "Version %s"
 ```
 
 ```bash
-cd mon-dossier-sante && docker compose -f deploiement/compose.yaml up -d --build
+git push --follow-tags
 ```
 
-L'application répond alors sur `http://127.0.0.1:8080`, depuis la machine seulement. Il faut devant elle un proxy inverse en **HTTPS** (Caddy, Traefik, nginx…) : sans HTTPS, le navigateur refuse le chiffrement et l'application reste bloquée.
+`npm version` vérifie les sources et les tests, met à jour le numéro dans `package.json`, reconstruit le HTML, commite et pose le tag, puis note l'empreinte de la nouvelle version au registre et commite celui-ci. L'envoi déclenche la construction du site. Une version dont l'application n'affiche pas le numéro de son tag est refusée. `npm run publier` prépare le même site dans `publication/` (non versionné) pour un essai local.
 
-**Mettre à jour** la machine après la publication d'une nouvelle version :
-
-```bash
-git pull && docker compose -f deploiement/compose.yaml up -d --build
-```
-
-**Publier une version**, sur le poste de développement, depuis un dépôt propre où `npm run verifier` passe :
-
-```bash
-git tag v1.0.1
-```
-
-```bash
-npm run publier
-```
-
-```bash
-git add deploiement/versions-publiees.txt && git commit -m "Publication v1.0.1"
-```
-
-```bash
-git push && git push origin v1.0.1
-```
-
-`npm run publier` note l'empreinte de la nouvelle version au registre et prépare `publication/` (non versionné) pour un essai local. L'image, elle, reconstruit ses pages à partir de **tous** les tags `vX.Y.Z` (`publier --registre`) et refuse une version absente du registre ou dont le contenu diffère : les anciennes versions restent en ligne à leur adresse, la page d'accueil mène à la plus récente.
-
-**Le serveur.** nginx sans privilèges, conteneur en lecture seule, sans capacités, méthodes GET et HEAD seulement, en-têtes de sécurité (`deploiement/entetes-securite.conf`), cache définitif sur les versions. L'image finale ne contient que les pages publiées et la configuration du serveur : ni Node, ni git, ni l'historique. Le `.dockerignore` est une liste blanche : aucun coffre `.sante` ne peut entrer dans la construction.
+`homepage` dans `package.json` est l'adresse du site : une version téléchargée y cherche ses mises à jour. Si le site change d'adresse, les versions déjà téléchargées continueront de pointer vers l'ancienne.
 
 ## Tests
 
@@ -102,6 +87,7 @@ Les tests (Node 22 ou plus récent, sans dépendance) chargent le code depuis `s
 | `tests/parseur.test.mjs` | Lecture des bilans Cerballiance et Check-Up, nombres, unités, sections d'urines |
 | `tests/coffre.test.mjs` | Chiffrement, relecture avant écriture, limites du format, fiches structurées et comptes rendus (formats 1 à 3), changement de phrase secrète |
 | `tests/compte-rendu.test.mjs` | Lecture des comptes rendus d'imagerie et de consultation, date d'examen distinguée de la date de naissance, aucune donnée d'identité reprise |
+| `tests/publication.test.mjs` | Version déclarée par l'application, page d'accueil du site : script autorisé par sa CSP, aucune connexion, liens de téléchargement et d'ouverture, empreinte |
 | `tests/dossier.test.mjs` | Fiches (allergies, traitements, vaccinations, antécédents), traitements en cours, rappels de vaccination, saisie des mesures et IMC |
 
 Tous les bilans des tests sont fictifs. Pour couvrir un vrai compte rendu, ajoute son texte **anonymisé** dans `tests/parseur.test.mjs` avec les lignes attendues.
