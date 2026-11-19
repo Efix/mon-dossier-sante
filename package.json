@@ -1,6 +1,6 @@
 {
   "name": "mon-dossier-sante",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "type": "module",
   "description": "Mon dossier santé : application hors ligne, en un seul fichier HTML, avec coffre chiffré.",
