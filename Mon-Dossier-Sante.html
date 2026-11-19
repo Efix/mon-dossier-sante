@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-e70gSSsFFwD5oKtAU+BhSDSybRyAjYYpxz3pzlClw78=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-pHuUDFwJmU4TfAJqifOvUUlPBleqRBA2ZJSRGw1HFLw=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta name="application-version" content="1.1.0">
@@ -372,15 +372,15 @@ dialog::backdrop { background: #0d201fb3; }
     <div class="welcome-info">
       <div class="brand"><span class="brand-icon" aria-hidden="true"></span> Mon dossier santé</div>
       <div class="intro">
-        <h1>Tes bilans et<br>documents de santé</h1>
-        <p>Retrouve tes résultats d’analyses et leurs PDF d’origine dans un coffre chiffré que tu gardes sur ton appareil.</p>
+        <h1>Vos bilans et<br>documents de santé</h1>
+        <p>Retrouvez vos résultats d’analyses et leurs PDF d’origine dans un coffre chiffré que vous gardez sur votre appareil.</p>
       </div>
       <div class="welcome-bottom"><span id="app-version">Application hors ligne</span> <a id="update-link" target="_blank" rel="noopener noreferrer" hidden></a></div>
     </div>
     <main class="welcome-main">
       <div class="sign-in">
         <h2 id="access-heading">Ouvrir mon dossier</h2>
-        <p id="access-subtitle" class="muted">Sélectionne ton fichier <code>.sante</code> ou crée un coffre.</p>
+        <p id="access-subtitle" class="muted">Sélectionnez votre fichier <code>.sante</code> ou créez un coffre.</p>
         <input type="file" id="open-file" accept=".sante" hidden>
         <div id="access-choices" class="stack">
           <button id="resume" class="primary" type="button" hidden>Déverrouiller le coffre en cours</button>
@@ -393,7 +393,7 @@ dialog::backdrop { background: #0d201fb3; }
           <div id="confirm-password" class="stack tight" hidden>
             <label for="passphrase-again">Confirmer la phrase secrète</label>
             <input id="passphrase-again" type="password" autocomplete="off" maxlength="512">
-            <p class="muted small">Utilise au moins 15 caractères. La phrase est nécessaire pour rouvrir le coffre et ses sauvegardes.</p>
+            <p class="muted small">Utilisez au moins 15 caractères. La phrase est nécessaire pour rouvrir le coffre et ses sauvegardes.</p>
           </div>
           <div class="actions">
             <button id="access-back" class="secondary" type="button">Retour</button>
@@ -529,7 +529,7 @@ dialog::backdrop { background: #0d201fb3; }
         <div class="field"><label for="rekey-current">Phrase secrète actuelle</label><input id="rekey-current" type="password" autocomplete="off" required maxlength="512"></div>
         <div class="field"><label for="rekey-new">Nouvelle phrase secrète</label><input id="rekey-new" type="password" autocomplete="off" required maxlength="512"></div>
         <div class="field"><label for="rekey-again">Confirmer la nouvelle phrase</label><input id="rekey-again" type="password" autocomplete="off" required maxlength="512"></div>
-        <p class="muted small">Utilise au moins 15 caractères. Sans cette phrase, le coffre ne peut plus être ouvert.</p>
+        <p class="muted small">Utilisez au moins 15 caractères. Sans cette phrase, le coffre ne peut plus être ouvert.</p>
         <p id="rekey-message" class="notice" role="status" hidden></p>
       </div>
       <div class="dialog-actions">
@@ -1301,7 +1301,7 @@ dialog::backdrop { background: #0d201fb3; }
       try {
         return checkRecord(stored(record), ids)
       } catch {
-        throw Error('Le document « ' + String(record?.title ?? '').slice(0, 80) + ' » contient un champ invalide ou trop long. Corrige-le avant d’enregistrer.')
+        throw Error('Le document « ' + String(record?.title ?? '').slice(0, 80) + ' » contient un champ invalide ou trop long. Corrigez-le avant d’enregistrer.')
       }
     })
     // Format 2 dès qu'une fiche structurée existe : une ancienne version de l'application refuse alors le coffre
@@ -1351,7 +1351,7 @@ dialog::backdrop { background: #0d201fb3; }
   async function inspect(blob) {
     if (!(blob instanceof Blob) || blob.size < headerLength + 20 || blob.size > MAX_VAULT) throw Error('Taille de coffre invalide.')
     const header = new Uint8Array(await blob.slice(0, headerLength).arrayBuffer())
-    if (!sameBytes(header.slice(0, magic.length), magic)) throw Error('Sélectionne un fichier .sante créé par cette application.')
+    if (!sameBytes(header.slice(0, magic.length), magic)) throw Error('Sélectionnez un fichier .sante créé par cette application.')
     return {header, salt:header.slice(8, 24), iv:header.slice(24, 36)}
   }
 
@@ -1422,7 +1422,7 @@ dialog::backdrop { background: #0d201fb3; }
   }
 
   async function attachment(file) {
-    if (file.size < 1 || file.size > MAX_DOCUMENT) throw Error('Choisis un document non vide de 30 Mo maximum.')
+    if (file.size < 1 || file.size > MAX_DOCUMENT) throw Error('Choisissez un document non vide de 30 Mo maximum.')
     const bytes = new Uint8Array(await file.arrayBuffer())
     const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
     return {name:safeName(file.name), bytes, hash:Array.from(digest, byte => byte.toString(16).padStart(2, '0')).join('')}
@@ -1445,7 +1445,7 @@ dialog::backdrop { background: #0d201fb3; }
       if (expectedHeader) {
         const disk = await handle.getFile()
         const header = new Uint8Array(await disk.slice(0, headerLength).arrayBuffer())
-        if (!sameBytes(header, expectedHeader)) throw Error('Ce fichier a changé. Enregistre tes modifications dans une copie du coffre.')
+        if (!sameBytes(header, expectedHeader)) throw Error('Ce fichier a changé. Enregistrez vos modifications dans une copie du coffre.')
       }
       await writable.write(sealed.blob)
       await writable.close()
@@ -1523,7 +1523,7 @@ dialog::backdrop { background: #0d201fb3; }
     const number = numberOf(value)
     const places = rule.decimals ? (rule.decimals === 1 ? 'une décimale' : rule.decimals + ' décimales') + ' au plus' : 'sans décimale'
     if (!/^\d+(?:,\d+)?$/.test(value) || !(number >= rule.min && number <= rule.max) || (value.split(',')[1]?.length ?? 0) > rule.decimals) {
-      throw Error(metric.label + ' : indique un nombre entre ' + decimal.format(rule.min) + ' et ' + decimal.format(rule.max) +
+      throw Error(metric.label + ' : indiquez un nombre entre ' + decimal.format(rule.min) + ' et ' + decimal.format(rule.max) +
         ' ' + metric.unit + ', ' + places + '.')
     }
     return value
@@ -1536,8 +1536,8 @@ dialog::backdrop { background: #0d201fb3; }
       const value = readMeasure(key, input[key])
       if (value) fields[key] = value
     }
-    if (!Object.keys(fields).length) throw Error('Indique au moins une mesure.')
-    if (Boolean(fields.systolic) !== Boolean(fields.diastolic)) throw Error('Indique les deux chiffres de la tension : systolique et diastolique.')
+    if (!Object.keys(fields).length) throw Error('Indiquez au moins une mesure.')
+    if (Boolean(fields.systolic) !== Boolean(fields.diastolic)) throw Error('Indiquez les deux chiffres de la tension : systolique et diastolique.')
     if (fields.systolic && numberOf(fields.systolic) <= numberOf(fields.diastolic)) {
       throw Error('La tension systolique (le premier chiffre) doit dépasser la diastolique.')
     }
@@ -1867,7 +1867,7 @@ dialog::backdrop { background: #0d201fb3; }
       })
       const read = async () => {
         const source = await task.promise
-        if (source.numPages > 120) throw Error('L’extraction est limitée aux PDF de 120 pages. Tu peux archiver ce fichier et saisir les valeurs.')
+        if (source.numPages > 120) throw Error('L’extraction est limitée aux PDF de 120 pages. Vous pouvez archiver ce fichier et saisir les valeurs.')
         const pages = []
         let chars = 0
         for (let number = 1; number <= source.numPages; number++) {
@@ -1875,23 +1875,23 @@ dialog::backdrop { background: #0d201fb3; }
           const content = await page.getTextContent()
           const lines = layout(content.items)
           chars += lines.reduce((count, line) => count + line.length, 0)
-          if (chars > 1000000) throw Error('Ce texte est trop long pour l’extraction. Tu peux archiver le PDF et saisir les résultats.')
+          if (chars > 1000000) throw Error('Ce texte est trop long pour l’extraction. Vous pouvez archiver le PDF et saisir les résultats.')
           pages.push({number, lines})
           page.cleanup()
         }
         return pages
       }
       const timeout = new Promise((_, reject) => {
-        timer = setTimeout(() => reject(Error('La lecture du PDF a expiré. Tu peux archiver le fichier ou coller son texte.')), 20000)
+        timer = setTimeout(() => reject(Error('La lecture du PDF a expiré. Vous pouvez archiver le fichier ou coller son texte.')), 20000)
       })
       return await Promise.race([read(), timeout])
     } catch (error) {
-      if (error.name === 'PasswordException') throw Error('Ce PDF est protégé. Tu peux conserver l’original et coller le texte après l’avoir ouvert avec son mot de passe.')
+      if (error.name === 'PasswordException') throw Error('Ce PDF est protégé. Vous pouvez conserver l’original et coller le texte après l’avoir ouvert avec son mot de passe.')
       if (error.name === 'InvalidPDFException' || error.name === 'UnknownErrorException') {
-        throw Error('Le texte de ce PDF n’a pas pu être lu. Tu peux l’archiver et saisir les résultats.')
+        throw Error('Le texte de ce PDF n’a pas pu être lu. Vous pouvez l’archiver et saisir les résultats.')
       }
       if (error.message.startsWith('L’extraction') || error.message.startsWith('Ce texte') || error.message.startsWith('La lecture')) throw error
-      throw Error('Lecture du PDF indisponible. Essaie de coller son texte ou de saisir les valeurs.')
+      throw Error('Lecture du PDF indisponible. Essayez de coller son texte ou de saisir les valeurs.')
     } finally {
       clearTimeout(timer)
       if (task) await task.destroy().catch(() => {})
@@ -1932,8 +1932,8 @@ dialog::backdrop { background: #0d201fb3; }
       if (task) await task.destroy().catch(() => {})
       if (workerURL) URL.revokeObjectURL(workerURL)
       throw Error(error?.name === 'PasswordException' ?
-        'Ce PDF est protégé par un mot de passe et ne peut pas être affiché ici. Tu peux télécharger l’original.' :
-        'Ce PDF n’a pas pu être affiché. Tu peux télécharger l’original.')
+        'Ce PDF est protégé par un mot de passe et ne peut pas être affiché ici. Vous pouvez télécharger l’original.' :
+        'Ce PDF n’a pas pu être affiché. Vous pouvez télécharger l’original.')
     } finally {
       clearTimeout(timer)
     }
@@ -2089,7 +2089,7 @@ dialog::backdrop { background: #0d201fb3; }
   function idleLock() {
     if (draft?.changed && !graceUsed) {
       graceUsed = true
-      notice('editor-message', 'Coffre inactif : il se verrouillera dans dix minutes et ce brouillon sera perdu. Ajoute le document au dossier pour le conserver.', 'warn')
+      notice('editor-message', 'Coffre inactif : il se verrouillera dans dix minutes et ce brouillon sera perdu. Ajoutez le document au dossier pour le conserver.', 'warn')
       timer = setTimeout(idleLock, idleMs)
       return
     }
@@ -2113,15 +2113,15 @@ dialog::backdrop { background: #0d201fb3; }
     $('confirm-password').hidden = mode !== 'create'
     $('passphrase-again').required = mode === 'create'
     $('access-heading').textContent = mode === 'create' ? 'Créer le coffre' : 'Ouvrir mon dossier'
-    $('access-subtitle').textContent = mode === 'open' ? 'Entre la phrase secrète de ton coffre.' :
-      mode === 'create' ? 'Choisis la phrase secrète qui protégera tes dossiers.' :
-      'Sélectionne un fichier .sante ou crée un coffre.'
+    $('access-subtitle').textContent = mode === 'open' ? 'Saisissez la phrase secrète de votre coffre.' :
+      mode === 'create' ? 'Choisissez la phrase secrète qui protégera vos dossiers.' :
+      'Sélectionnez un fichier .sante ou créez un coffre.'
     $('access-submit').textContent = mode === 'create' ? 'Créer mon coffre' : 'Déverrouiller'
     $('access-form').reset()
     $('open-file').value = ''
     notice('access-message')
     if (mode) $('passphrase').focus()
-    else if (lockedCopy?.dirty) notice('access-message', 'Des modifications sont en attente. Déverrouille le coffre en cours pour les enregistrer.', 'warn')
+    else if (lockedCopy?.dirty) notice('access-message', 'Des modifications sont en attente. Déverrouillez le coffre en cours pour les enregistrer.', 'warn')
   }
 
   function canReplaceSession() {
@@ -2172,7 +2172,7 @@ dialog::backdrop { background: #0d201fb3; }
     const passphrase = $('passphrase').value
     const creating = accessMode === 'create'
     if (creating && ([...passphrase].length < 15 || !passphrase.trim())) {
-      notice('access-message', 'Choisis une phrase secrète d’au moins 15 caractères.', 'warn')
+      notice('access-message', 'Choisissez une phrase secrète d’au moins 15 caractères.', 'warn')
       return
     }
     if (creating && passphrase !== $('passphrase-again').value) {
@@ -2189,7 +2189,7 @@ dialog::backdrop { background: #0d201fb3; }
         session = {key, salt, records:[], handle:null, header:null, dirty:true, current:null}
       } else {
         const selected = pendingOpen
-        if (!selected) throw Error('Sélectionne un coffre.')
+        if (!selected) throw Error('Sélectionnez un coffre.')
         const loaded = await Coffre.open(selected.blob, passphrase)
         session = {
           ...loaded, handle:selected.handle, dirty:selected.dirty, current:selected.blob,
@@ -2235,7 +2235,7 @@ dialog::backdrop { background: #0d201fb3; }
       }
       if (handle && typeof handle.requestPermission === 'function') {
         const status = await handle.requestPermission({mode:'readwrite'})
-        if (status !== 'granted') throw Error('Accès en écriture refusé. Télécharge une copie chiffrée depuis la section Coffre.')
+        if (status !== 'granted') throw Error('Accès en écriture refusé. Téléchargez une copie chiffrée depuis la section Coffre.')
       }
       const key = rekey?.key ?? session.key
       const salt = rekey?.salt ?? session.salt
@@ -2248,8 +2248,8 @@ dialog::backdrop { background: #0d201fb3; }
       const adopted = !copy || sameFile || (session.dirty && !handle && !session.handle)
       if (adopted) session = {...session, key, salt, handle, header:sealed.header, dirty:false, current:sealed.blob}
       const message = handle ? (copy && !sameFile ? 'Copie chiffrée enregistrée.' : 'Coffre enregistré.') :
-        adopted ? 'Fichier .sante chiffré téléchargé. Préfère cette version à la prochaine ouverture.' :
-        session.dirty ? 'Copie chiffrée téléchargée avec tes modifications en cours. Le fichier du coffre ouvert reste à enregistrer.' :
+        adopted ? 'Fichier .sante chiffré téléchargé. Utilisez cette version à la prochaine ouverture.' :
+        session.dirty ? 'Copie chiffrée téléchargée avec vos modifications en cours. Le fichier du coffre ouvert reste à enregistrer.' :
         'Copie chiffrée téléchargée.'
       // Une écriture réussie dans le fichier du coffre lève la suspension de l'enregistrement automatique.
       const resumed = autosaveSuspended && adopted && Boolean(handle)
@@ -2261,7 +2261,7 @@ dialog::backdrop { background: #0d201fb3; }
       if (rekey) throw error
       if (auto) autosaveSuspended = true
       notice('app-message', say(prefix, error.message,
-        auto && 'L’enregistrement automatique est suspendu : utilise « Enregistrer le coffre ».'), 'error')
+        auto && 'L’enregistrement automatique est suspendu : utilisez « Enregistrer le coffre ».'), 'error')
       if (auto && view === 'vault') renderVault()
       return false
     } finally {
@@ -2276,7 +2276,7 @@ dialog::backdrop { background: #0d201fb3; }
     session.dirty = true
     refreshStatus()
     if (autosave && !autosaveSuspended && session.handle) void save({auto:true, prefix:text})
-    else notice('app-message', text + ' Enregistre le coffre pour conserver cette modification.')
+    else notice('app-message', text + ' Enregistrez le coffre pour conserver cette modification.')
   }
 
   async function lock() {
@@ -2455,10 +2455,10 @@ dialog::backdrop { background: #0d201fb3; }
 
   function renderHome() {
     const records = [...session.records].sort(chronological)
-    const head = pageHeader('Vue d’ensemble', 'Tes résultats d’analyses, ordonnances et autres documents de santé.')
+    const head = pageHeader('Vue d’ensemble', 'Vos résultats d’analyses, ordonnances et autres documents de santé.')
     const banner = el('div', 'banner')
     const intro = el('div')
-    intro.append(el('h2', '', 'Ajouter un bilan biologique'), el('p', 'muted', 'Importe un PDF Cerballiance ou Check-Up, puis vérifie les résultats proposés.'))
+    intro.append(el('h2', '', 'Ajouter un bilan biologique'), el('p', 'muted', 'Importez un PDF Cerballiance ou Check-Up, puis vérifiez les résultats proposés.'))
     banner.append(intro, button('Importer un bilan', () => openEditor('bio'), 'primary'))
     const stats = el('div', 'grid-stats')
     for (const [value, label] of [[records.length, 'Éléments au dossier'], [records.filter(item => item.kind === 'bio').length, 'Bilans'], [allGroups().size, 'Paramètres suivis']]) {
@@ -2476,7 +2476,7 @@ dialog::backdrop { background: #0d201fb3; }
     }
     const recent = el('section', 'panel')
     section(recent, 'Éléments récents', button('Ajouter un document', () => openEditor('other')))
-    recent.append(listRecords(records.slice(0, 6), 'Tes documents s’afficheront ici dès le premier ajout.'))
+    recent.append(listRecords(records.slice(0, 6), 'Vos documents s’afficheront ici dès le premier ajout.'))
     panels.append(recent)
     $('view').replaceChildren(head, banner, stats, panels)
   }
@@ -2539,7 +2539,7 @@ dialog::backdrop { background: #0d201fb3; }
     const records = session.records.filter(record => record.kind === 'measure').sort(chronological)
     if (!records.length) {
       const panel = el('section', 'panel')
-      panel.append(empty('Tes relevés apparaîtront ici, avec leurs courbes, dès la première saisie.'))
+      panel.append(empty('Vos relevés apparaîtront ici, avec leurs courbes, dès la première saisie.'))
       $('view').replaceChildren(head, panel)
       return
     }
@@ -2761,7 +2761,7 @@ dialog::backdrop { background: #0d201fb3; }
   }
 
   function renderTracking() {
-    const head = pageHeader('Mon suivi biologique', 'Survole ou touche un point pour afficher les détails du prélèvement.',
+    const head = pageHeader('Mon suivi biologique', 'Survolez ou touchez un point pour afficher les détails du prélèvement.',
       button('Importer un bilan', () => openEditor('bio'), 'primary'))
     const series = []
     const groups = [...allGroups().values()].sort((a,b) => a.name.localeCompare(b.name,'fr'))
@@ -2806,7 +2806,7 @@ dialog::backdrop { background: #0d201fb3; }
         drawChart(canvas, results, key)
       }
       if (!matches.length) cards.append(empty(series.length ?
-        'Aucun paramètre ne correspond à la recherche.' : 'Tes courbes apparaîtront après l’ajout de résultats numériques.'))
+        'Aucun paramètre ne correspond à la recherche.' : 'Vos courbes apparaîtront après l’ajout de résultats numériques.'))
       if (page > 0) pager.append(button('Précédent', () => {page--; render(); head.scrollIntoView()}))
       if ((page + 1) * perPage < matches.length) pager.append(button('Suivant', () => {page++; render(); head.scrollIntoView()}))
     }
@@ -2961,16 +2961,16 @@ dialog::backdrop { background: #0d201fb3; }
   }
 
   function renderLabs() {
-    const head = pageHeader('Résultats', 'Consulte la dernière mesure et l’historique d’un paramètre.',
+    const head = pageHeader('Résultats', 'Consultez la dernière mesure et l’historique d’un paramètre.',
       button('Importer un bilan', () => openEditor('bio'), 'primary'))
     const groups = [...allGroups().values()].sort((a,b) => a.name.localeCompare(b.name, 'fr'))
     const panel = el('section', 'panel stack')
     const docs = el('section', 'panel')
     section(docs, 'Comptes rendus de laboratoire')
-    docs.append(listRecords(session.records.filter(item => item.kind === 'bio').sort(chronological), 'Tes bilans importés apparaîtront ici.'))
+    docs.append(listRecords(session.records.filter(item => item.kind === 'bio').sort(chronological), 'Vos bilans importés apparaîtront ici.'))
     $('view').replaceChildren(head, panel, el('div', 'small', '\u00a0'), docs)
     if (!groups.length) {
-      panel.append(empty('Ajoute un bilan avec des résultats pour consulter tes courbes.'))
+      panel.append(empty('Ajoutez un bilan avec des résultats pour consulter vos courbes.'))
       return
     }
     const filters = el('div', 'filter-bar')
@@ -3041,12 +3041,12 @@ dialog::backdrop { background: #0d201fb3; }
   }
 
   function renderVault() {
-    const head = pageHeader('Coffre', 'Gère le fichier chiffré et ses sauvegardes.')
+    const head = pageHeader('Coffre', 'Gérez le fichier chiffré et ses sauvegardes.')
     const grid = el('div', 'vault-grid')
     const device = el('section', 'panel')
     device.append(el('h2', '', 'Fichier du coffre'), el('p', 'muted', session.handle ?
-      'Enregistre les modifications dans le fichier .sante ouvert.' :
-      'Utilise « Enregistrer le coffre » pour créer ou mettre à jour ton fichier .sante.'),
+      'Enregistrez les modifications dans le fichier .sante ouvert.' :
+      'Utilisez « Enregistrer le coffre » pour créer ou mettre à jour votre fichier .sante.'),
       el('p', 'small muted', 'Documents joints · ' + formatBytes(session.records.reduce((total, record) => total + (record.file?.bytes.length ?? 0), 0)) + ' sur 150 Mo pour le coffre.'))
     if (session.handle) {
       const toggle = el('label', 'check-line')
@@ -3064,24 +3064,24 @@ dialog::backdrop { background: #0d201fb3; }
       device.append(el('p', 'small muted', 'L’enregistrement automatique s’active dès que le coffre est lié à un fichier, dans Edge ou Chrome.'))
     }
     const copies = el('section', 'panel')
-    copies.append(el('h2', '', 'Sauvegarde'), el('p', 'muted', 'Conserve une copie dans un second emplacement. Tu peux la rouvrir avec la phrase secrète en vigueur au moment de la copie.'), backup())
+    copies.append(el('h2', '', 'Sauvegarde'), el('p', 'muted', 'Conservez une copie dans un second emplacement. Vous pourrez la rouvrir avec la phrase secrète en vigueur au moment de la copie.'), backup())
     const secret = el('section', 'panel')
-    secret.append(el('h2', '', 'Phrase secrète'), el('p', 'muted', 'Remplace la phrase qui protège le coffre. La phrase actuelle te sera demandée.'),
+    secret.append(el('h2', '', 'Phrase secrète'), el('p', 'muted', 'Remplacez la phrase qui protège le coffre. La phrase actuelle vous sera demandée.'),
       button('Changer la phrase secrète', openRekey))
     const application = el('section', 'panel')
     application.append(el('h2', '', 'Application'), el('p', 'muted', !appVersion ? 'Version non indiquée.' : online ?
       'Version ' + appVersion + ', ouverte en ligne depuis ' + location.host + '. Le coffre reste sur cet appareil.' :
       'Version ' + appVersion + ', ouverte depuis un fichier de cet appareil.'))
     if (updateUrl) application.append(updateLink(el('a', 'secondary link-button')))
-    else application.append(el('p', 'small muted', 'Pour mettre à jour, télécharge la nouvelle version là où tu as obtenu ce fichier.'))
+    else application.append(el('p', 'small muted', 'Pour mettre à jour, téléchargez la nouvelle version là où vous avez obtenu ce fichier.'))
     application.append(el('p', 'small muted', online ?
-      'La page d’accueil du site mène toujours à la dernière version. Une version téléchargée s’ouvre depuis ton disque, sans connexion.' :
-      'Une mise à jour ne remplace que ce fichier HTML : ouvre ton coffre .sante avec la nouvelle version. Garde-la ensuite, car une version plus ancienne peut ne pas relire un coffre enregistré par une plus récente.'))
+      'La page d’accueil du site mène toujours à la dernière version. Une version téléchargée s’ouvre depuis votre disque, sans connexion.' :
+      'Une mise à jour ne remplace que ce fichier HTML : ouvrez votre coffre .sante avec la nouvelle version. Gardez-la ensuite, car une version plus ancienne peut ne pas relire un coffre enregistré par une plus récente.'))
     grid.append(device, copies, secret, application)
     const help = el('section', 'panel help-panel')
     help.append(el('h2', '', 'Chiffrement et import'),
       el('p', 'muted', 'Le fichier .sante contient les documents et les résultats chiffrés. L’application s’ouvre hors ligne, sans compte. Le coffre se verrouille après dix minutes d’inactivité.'),
-      el('p', 'muted', 'L’extraction lit le texte des PDF. Pour un scan, ajoute le fichier et saisis les résultats à partir de l’original. Tu peux aussi coller le texte d’un bilan.'),
+      el('p', 'muted', 'L’extraction lit le texte des PDF. Pour un scan, ajoutez le fichier et saisissez les résultats à partir de l’original. Vous pouvez aussi coller le texte d’un bilan.'),
       el('p', 'muted', 'Le fichier .sante permet aussi de déplacer le dossier sur un autre appareil. La phrase secrète est nécessaire pour l’ouvrir.'))
     $('view').replaceChildren(head, grid, help)
   }
@@ -3105,7 +3105,7 @@ dialog::backdrop { background: #0d201fb3; }
     const current = $('rekey-current').value
     const next = $('rekey-new').value
     if ([...next].length < 15 || !next.trim()) {
-      notice('rekey-message', 'Choisis une nouvelle phrase secrète d’au moins 15 caractères.', 'warn')
+      notice('rekey-message', 'Choisissez une nouvelle phrase secrète d’au moins 15 caractères.', 'warn')
       return
     }
     if (next !== $('rekey-again').value) {
@@ -3211,7 +3211,7 @@ dialog::backdrop { background: #0d201fb3; }
     try {
       bitmap = await createImageBitmap(new Blob([bytes]))
     } catch {
-      throw Error('Cette image n’a pas pu être affichée. Tu peux télécharger l’original.')
+      throw Error('Cette image n’a pas pu être affichée. Vous pouvez télécharger l’original.')
     }
     return {
       pages:1,
@@ -3269,7 +3269,7 @@ dialog::backdrop { background: #0d201fb3; }
       canvas.setAttribute('aria-label', (state.pages > 1 ? 'Page ' + state.page + ' sur ' + state.pages + ' de ' : 'Aperçu de ') + state.name)
       notice('viewer-message')
     } catch {
-      if (viewer === state && turn === state.turn) notice('viewer-message', 'Cette page n’a pas pu être affichée. Tu peux télécharger l’original.', 'warn')
+      if (viewer === state && turn === state.turn) notice('viewer-message', 'Cette page n’a pas pu être affichée. Vous pouvez télécharger l’original.', 'warn')
     }
   }
 
@@ -3438,7 +3438,7 @@ dialog::backdrop { background: #0d201fb3; }
     const biology = $('doc-kind').value === 'bio'
     $('attachment-name').textContent = draft.file ?
       draft.file.name + (draft.loading && pdf ? ' · Lecture du PDF…' : '') :
-      biology ? 'Choisis un PDF avec du texte sélectionnable pour remplir les valeurs automatiquement.' :
+      biology ? 'Choisissez un PDF avec du texte sélectionnable pour remplir les valeurs automatiquement.' :
       'PDF ou autre fichier, 30 Mo maximum.'
     $('source-choose').textContent = draft.file ? 'Changer de fichier' : 'Choisir un fichier'
     $('source-remove').hidden = !draft.file
@@ -3485,7 +3485,7 @@ dialog::backdrop { background: #0d201fb3; }
         await extractAttachment(active, detectKind)
         if (draft !== active) return
       } else if (biology && !Coffre.isPDF(attachment.bytes)) {
-        notice('import-message', 'L’extraction automatique lit les PDF avec du texte. Tu peux saisir ou coller les valeurs pour ce fichier.', 'warn')
+        notice('import-message', 'L’extraction automatique lit les PDF avec du texte. Vous pouvez saisir ou coller les valeurs pour ce fichier.', 'warn')
       }
       if (!$('doc-title').value) {
         $('doc-title').value = ($('doc-kind').value === 'bio' ? 'Bilan biologique' :
@@ -3525,7 +3525,7 @@ dialog::backdrop { background: #0d201fb3; }
     if (urineSkipped) ignored.push(urineSkipped + ' ligne(s) d’analyse d’urine laissée(s) de côté.')
     const omissions = ignored.length ? ' Non repris, à ajouter à la main si besoin : ' + ignored.join(' ') : ''
     if (!rows.length) {
-      notice('import-message', 'Aucun résultat reconnu. Tu peux joindre l’original et saisir les valeurs à la main.' + omissions, 'warn')
+      notice('import-message', 'Aucun résultat reconnu. Vous pouvez joindre l’original et saisir les valeurs à la main.' + omissions, 'warn')
       return
     }
     $('result-editor').replaceChildren()
@@ -3534,8 +3534,8 @@ dialog::backdrop { background: #0d201fb3; }
     draft.changed = true
     $('confirm-results').hidden = false
     $('checked-results').checked = false
-    notice('import-message', rows.slice(0, 1000).length + ' valeur(s) proposée(s). Vérifie-les avec l’original et complète les lignes manquantes.' +
-      (multipleDates ? ' Plusieurs dates de prélèvement figurent dans le document. Vérifie chaque date.' : '') + omissions,
+    notice('import-message', rows.slice(0, 1000).length + ' valeur(s) proposée(s). Vérifiez-les avec l’original et complétez les lignes manquantes.' +
+      (multipleDates ? ' Plusieurs dates de prélèvement figurent dans le document. Vérifiez chaque date.' : '') + omissions,
       multipleDates || unknown.length || unnamed ? 'warn' : '')
   }
 
@@ -3593,7 +3593,7 @@ dialog::backdrop { background: #0d201fb3; }
   // Ne remplace jamais une saisie : seuls les champs vides, ou encore égaux à ce qui a été proposé, sont remplis.
   function acceptReport(report, detectKind, prefix = '') {
     if (!report) {
-      notice('report-message', detectKind ? '' : 'Aucun élément reconnu dans ce document : complète les champs à la main.', 'warn')
+      notice('report-message', detectKind ? '' : 'Aucun élément reconnu dans ce document : complétez les champs à la main.', 'warn')
       return
     }
     if (detectKind && report.kind && $('doc-kind').value === 'other') {
@@ -3616,7 +3616,7 @@ dialog::backdrop { background: #0d201fb3; }
     }
     if (filled.length) {
       draft.changed = true
-      notice('report-message', prefix + 'Repris du compte rendu : ' + filled.join(', ') + '. Vérifie avec l’original.')
+      notice('report-message', prefix + 'Repris du compte rendu : ' + filled.join(', ') + '. Vérifiez avec l’original.')
     } else {
       notice('report-message', prefix || (detectKind ? '' : 'Rien de nouveau : les champs déjà remplis sont conservés.'))
     }
@@ -3646,7 +3646,7 @@ dialog::backdrop { background: #0d201fb3; }
   $('read-report').addEventListener('click', reread)
   $('parse-text').addEventListener('click', () => {
     if (!draft || draft.loading) return
-    if (!$('paste-text').value.trim()) { notice('import-message', 'Colle le texte du compte rendu pour lancer la lecture.', 'warn'); return }
+    if (!$('paste-text').value.trim()) { notice('import-message', 'Collez le texte du compte rendu pour lancer la lecture.', 'warn'); return }
     if ($('result-editor').children.length && !confirm('Remplacer les lignes actuelles si des résultats sont trouvés dans ce texte ?')) return
     acceptProposals(Lab.parse(Lab.pagesFromText($('paste-text').value), $('doc-lab').value))
   })
@@ -3702,19 +3702,19 @@ dialog::backdrop { background: #0d201fb3; }
       const lab = kind === 'bio' ? ($('doc-lab').value === 'auto' ? 'other' : $('doc-lab').value) : ''
       const date = $('doc-date').value
       const title = $('doc-title').value.trim()
-      if (!title || !Lab.validDate(date)) throw Error('Indique un titre et une date valide.')
+      if (!title || !Lab.validDate(date)) throw Error('Indiquez un titre et une date valide.')
       const items = Array.from($('result-editor').children)
       if (kind === 'bio' && items.length && draft.proposed && !$('checked-results').checked) {
         $('checked-results').focus()
-        throw Error('Confirme la vérification des résultats extraits avant de les ajouter.')
+        throw Error('Confirmez la vérification des résultats extraits avant de les ajouter.')
       }
       if (kind !== 'bio' && items.length && !confirm('Changer le type de document et retirer ses résultats structurés ?')) return
       const results = []
       if (kind === 'bio') for (const entry of items) {
         const values = Object.fromEntries(Array.from(entry.querySelectorAll('[data-field]'), input => [input.dataset.field, input.value.trim()]))
         if (Object.values(values).every(value => !value)) continue
-        if (!values.name || !values.value) throw Error('Chaque résultat doit avoir un nom et une valeur. Retire les lignes incomplètes.')
-        if (values.date && !Lab.validDate(values.date)) throw Error('Vérifie la date de prélèvement de ' + values.name + '.')
+        if (!values.name || !values.value) throw Error('Chaque résultat doit avoir un nom et une valeur. Retirez les lignes incomplètes.')
+        if (values.date && !Lab.validDate(values.date)) throw Error('Vérifiez la date de prélèvement de ' + values.name + '.')
         for (const [field, label, limit] of [['name','Analyse',160], ['value','Valeur',240], ['unit','Unité',60], ['reference','Référence du labo',600]]) {
           if (values[field].length > limit) {
             entry.querySelector('[data-field=' + field + ']').focus()
@@ -3737,7 +3737,7 @@ dialog::backdrop { background: #0d201fb3; }
       try {
         Coffre.check(record)
       } catch {
-        throw Error('Ce document contient un champ vide, trop long ou invalide. Vérifie le titre, les notes et chaque résultat.')
+        throw Error('Ce document contient un champ vide, trop long ou invalide. Vérifiez le titre, les notes et chaque résultat.')
       }
       const editing = Boolean(draft.id)
       if (editing) session.records = session.records.map(old => old.id === record.id ? record : old)
@@ -3758,7 +3758,7 @@ dialog::backdrop { background: #0d201fb3; }
   for (const [key, label] of Object.entries(Coffre.labs)) $('doc-lab').add(option(key, label))
   for (const [, label] of Lab.markers) $('marker-names').append(option(label, label))
   if (!window.isSecureContext || !window.crypto?.subtle) {
-    notice('access-message', 'Ouvre ce fichier dans un navigateur de bureau récent, par exemple Edge ou Chrome, pour utiliser le chiffrement.', 'warn')
+    notice('access-message', 'Ouvrez ce fichier dans un navigateur de bureau récent, par exemple Edge ou Chrome, pour utiliser le chiffrement.', 'warn')
     $('choose-vault').disabled = true
     $('new-vault').disabled = true
   }

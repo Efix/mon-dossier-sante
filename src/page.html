@@ -15,15 +15,15 @@
     <div class="welcome-info">
       <div class="brand"><span class="brand-icon" aria-hidden="true"></span> Mon dossier santé</div>
       <div class="intro">
-        <h1>Tes bilans et<br>documents de santé</h1>
-        <p>Retrouve tes résultats d’analyses et leurs PDF d’origine dans un coffre chiffré que tu gardes sur ton appareil.</p>
+        <h1>Vos bilans et<br>documents de santé</h1>
+        <p>Retrouvez vos résultats d’analyses et leurs PDF d’origine dans un coffre chiffré que vous gardez sur votre appareil.</p>
       </div>
       <div class="welcome-bottom"><span id="app-version">Application hors ligne</span> <a id="update-link" target="_blank" rel="noopener noreferrer" hidden></a></div>
     </div>
     <main class="welcome-main">
       <div class="sign-in">
         <h2 id="access-heading">Ouvrir mon dossier</h2>
-        <p id="access-subtitle" class="muted">Sélectionne ton fichier <code>.sante</code> ou crée un coffre.</p>
+        <p id="access-subtitle" class="muted">Sélectionnez votre fichier <code>.sante</code> ou créez un coffre.</p>
         <input type="file" id="open-file" accept=".sante" hidden>
         <div id="access-choices" class="stack">
           <button id="resume" class="primary" type="button" hidden>Déverrouiller le coffre en cours</button>
@@ -36,7 +36,7 @@
           <div id="confirm-password" class="stack tight" hidden>
             <label for="passphrase-again">Confirmer la phrase secrète</label>
             <input id="passphrase-again" type="password" autocomplete="off" maxlength="512">
-            <p class="muted small">Utilise au moins 15 caractères. La phrase est nécessaire pour rouvrir le coffre et ses sauvegardes.</p>
+            <p class="muted small">Utilisez au moins 15 caractères. La phrase est nécessaire pour rouvrir le coffre et ses sauvegardes.</p>
           </div>
           <div class="actions">
             <button id="access-back" class="secondary" type="button">Retour</button>
@@ -172,7 +172,7 @@
         <div class="field"><label for="rekey-current">Phrase secrète actuelle</label><input id="rekey-current" type="password" autocomplete="off" required maxlength="512"></div>
         <div class="field"><label for="rekey-new">Nouvelle phrase secrète</label><input id="rekey-new" type="password" autocomplete="off" required maxlength="512"></div>
         <div class="field"><label for="rekey-again">Confirmer la nouvelle phrase</label><input id="rekey-again" type="password" autocomplete="off" required maxlength="512"></div>
-        <p class="muted small">Utilise au moins 15 caractères. Sans cette phrase, le coffre ne peut plus être ouvert.</p>
+        <p class="muted small">Utilisez au moins 15 caractères. Sans cette phrase, le coffre ne peut plus être ouvert.</p>
         <p id="rekey-message" class="notice" role="status" hidden></p>
       </div>
       <div class="dialog-actions">

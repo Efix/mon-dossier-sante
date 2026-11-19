@@ -1,5 +1,5 @@
 name: Proposer une idée
-description: Une fonction qui te manque, une amélioration, une formulation peu claire.
+description: Une fonction qui vous manque, une amélioration, une formulation peu claire.
 title: "[Idée] "
 labels: ["idée"]
 body:
@@ -10,14 +10,14 @@ body:
   - type: textarea
     id: besoin
     attributes:
-      label: Ton besoin
-      description: Ce que tu cherches à faire, et ce qui t'en empêche aujourd'hui.
+      label: Votre besoin
+      description: Ce que vous cherchez à faire, et ce qui vous en empêche aujourd'hui.
     validations:
       required: true
   - type: textarea
     id: proposition
     attributes:
-      label: Ce que tu proposes
+      label: Ce que vous proposez
       description: Facultatif. Comment l'application pourrait y répondre.
   - type: checkboxes
     id: donnees

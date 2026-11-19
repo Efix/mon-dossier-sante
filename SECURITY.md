@@ -10,22 +10,22 @@ Tout ce qui permettrait de contourner l'une d'elles est une faille de sécurité
 
 ## Signaler une faille
 
-**N'ouvre pas de ticket public.** Utilise le signalement privé de GitHub : onglet [Security](https://github.com/Efix/mon-dossier-sante/security), puis « Report a vulnerability ». Seul le mainteneur voit ton signalement.
+**N'ouvrez pas de ticket public.** Utilisez le signalement privé de GitHub : onglet [Security](https://github.com/Efix/mon-dossier-sante/security), puis « Report a vulnerability ». Seul le mainteneur voit votre signalement.
 
-Indique, si possible :
+Indiquez, si possible :
 
 - la version de l'application, affichée sur l'écran d'accueil et dans la page Coffre ;
 - le navigateur et le système utilisés ;
 - les étapes pour reproduire le problème, avec un coffre et des documents fictifs ;
 - ce qu'un attaquant pourrait obtenir.
 
-N'envoie jamais un vrai coffre, une vraie phrase secrète ou un vrai document médical, même dans un signalement privé.
+N'envoyez jamais un vrai coffre, une vraie phrase secrète ou un vrai document médical, même dans un signalement privé.
 
 ## Ce qui se passe ensuite
 
-- Tu reçois une première réponse sous sept jours.
+- Vous recevez une première réponse sous sept jours.
 - Le problème est confirmé ou expliqué, puis corrigé dans une nouvelle version publiée sur le site.
-- Un avis de sécurité est publié dans le dépôt une fois la correction disponible. Tu y es cité si tu le souhaites.
+- Un avis de sécurité est publié dans le dépôt une fois la correction disponible. Votre nom y figure si vous le souhaitez.
 
 Le projet est maintenu bénévolement et ne propose pas de récompense.
 

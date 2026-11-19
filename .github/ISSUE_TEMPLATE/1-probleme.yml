@@ -8,7 +8,7 @@ body:
       value: |
         Merci de prendre le temps de signaler ce problème.
 
-        **Ce ticket sera public.** N'y mets jamais un vrai compte rendu, un coffre `.sante`, une phrase secrète, ni une capture où apparaissent ton nom, ta date de naissance ou tes résultats. Une faille de sécurité se signale [en privé](https://github.com/Efix/mon-dossier-sante/security/advisories/new).
+        **Ce ticket sera public.** N'y mettez jamais un vrai compte rendu, un coffre `.sante`, une phrase secrète, ni une capture où apparaissent votre nom, votre date de naissance ou vos résultats. Une faille de sécurité se signale [en privé](https://github.com/Efix/mon-dossier-sante/security/advisories/new).
   - type: input
     id: version
     attributes:
@@ -43,7 +43,7 @@ body:
   - type: textarea
     id: attendu
     attributes:
-      label: Ce que tu attendais
+      label: Ce que vous attendiez
     validations:
       required: true
   - type: textarea

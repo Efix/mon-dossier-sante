@@ -93,7 +93,7 @@ if (process.argv[1] && fileURLToPath(import.meta.url) === fs.realpathSync(proces
   if (actuel === html) {
     console.log('Application à jour avec les sources (empreinte ' + empreinte + ').')
   } else if (verifier) {
-    console.error('Mon-Dossier-Sante.html ne correspond plus aux sources de src/. Lance « npm run build ».')
+    console.error('Mon-Dossier-Sante.html ne correspond plus aux sources de src/. Lancez « npm run build ».')
     process.exit(1)
   } else {
     fs.writeFileSync(fichier, html, 'utf8')

@@ -6,7 +6,7 @@
     try {
       bitmap = await createImageBitmap(new Blob([bytes]))
     } catch {
-      throw Error('Cette image n’a pas pu être affichée. Tu peux télécharger l’original.')
+      throw Error('Cette image n’a pas pu être affichée. Vous pouvez télécharger l’original.')
     }
     return {
       pages:1,
@@ -64,7 +64,7 @@
       canvas.setAttribute('aria-label', (state.pages > 1 ? 'Page ' + state.page + ' sur ' + state.pages + ' de ' : 'Aperçu de ') + state.name)
       notice('viewer-message')
     } catch {
-      if (viewer === state && turn === state.turn) notice('viewer-message', 'Cette page n’a pas pu être affichée. Tu peux télécharger l’original.', 'warn')
+      if (viewer === state && turn === state.turn) notice('viewer-message', 'Cette page n’a pas pu être affichée. Vous pouvez télécharger l’original.', 'warn')
     }
   }
 

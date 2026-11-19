@@ -31,10 +31,10 @@ Microsoft Edge et Google Chrome, dans leur version actuelle, sur ordinateur (Win
 
 ## Signaler une difficulté
 
-Ouvre un ticket avec le modèle [« Signaler un problème »](https://github.com/Efix/mon-dossier-sante/issues/new/choose) et commence le titre par « Accessibilité ». Indique :
+Ouvrez un ticket avec le modèle [« Signaler un problème »](https://github.com/Efix/mon-dossier-sante/issues/new/choose) et commencez le titre par « Accessibilité ». Indiquez :
 
-- ce que tu essayais de faire ;
-- ce qui t'en a empêché ;
-- ton navigateur, et l'aide technique utilisée (lecteur d'écran, loupe, commande vocale, navigation au clavier…).
+- ce que vous essayiez de faire ;
+- ce qui vous en a empêché ;
+- votre navigateur, et l'aide technique utilisée (lecteur d'écran, loupe, commande vocale, navigation au clavier…).
 
-N'y joins aucune information de santé réelle : les tickets sont publics. Les difficultés d'accessibilité sont traitées en priorité, au même titre que les erreurs.
+N'y joignez aucune information de santé réelle : les tickets sont publics. Les difficultés d'accessibilité sont traitées en priorité, au même titre que les erreurs.

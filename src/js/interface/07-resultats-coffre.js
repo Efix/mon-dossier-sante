@@ -1,14 +1,14 @@
   function renderLabs() {
-    const head = pageHeader('Résultats', 'Consulte la dernière mesure et l’historique d’un paramètre.',
+    const head = pageHeader('Résultats', 'Consultez la dernière mesure et l’historique d’un paramètre.',
       button('Importer un bilan', () => openEditor('bio'), 'primary'))
     const groups = [...allGroups().values()].sort((a,b) => a.name.localeCompare(b.name, 'fr'))
     const panel = el('section', 'panel stack')
     const docs = el('section', 'panel')
     section(docs, 'Comptes rendus de laboratoire')
-    docs.append(listRecords(session.records.filter(item => item.kind === 'bio').sort(chronological), 'Tes bilans importés apparaîtront ici.'))
+    docs.append(listRecords(session.records.filter(item => item.kind === 'bio').sort(chronological), 'Vos bilans importés apparaîtront ici.'))
     $('view').replaceChildren(head, panel, el('div', 'small', '\u00a0'), docs)
     if (!groups.length) {
-      panel.append(empty('Ajoute un bilan avec des résultats pour consulter tes courbes.'))
+      panel.append(empty('Ajoutez un bilan avec des résultats pour consulter vos courbes.'))
       return
     }
     const filters = el('div', 'filter-bar')
@@ -79,12 +79,12 @@
   }
 
   function renderVault() {
-    const head = pageHeader('Coffre', 'Gère le fichier chiffré et ses sauvegardes.')
+    const head = pageHeader('Coffre', 'Gérez le fichier chiffré et ses sauvegardes.')
     const grid = el('div', 'vault-grid')
     const device = el('section', 'panel')
     device.append(el('h2', '', 'Fichier du coffre'), el('p', 'muted', session.handle ?
-      'Enregistre les modifications dans le fichier .sante ouvert.' :
-      'Utilise « Enregistrer le coffre » pour créer ou mettre à jour ton fichier .sante.'),
+      'Enregistrez les modifications dans le fichier .sante ouvert.' :
+      'Utilisez « Enregistrer le coffre » pour créer ou mettre à jour votre fichier .sante.'),
       el('p', 'small muted', 'Documents joints · ' + formatBytes(session.records.reduce((total, record) => total + (record.file?.bytes.length ?? 0), 0)) + ' sur 150 Mo pour le coffre.'))
     if (session.handle) {
       const toggle = el('label', 'check-line')
@@ -102,24 +102,24 @@
       device.append(el('p', 'small muted', 'L’enregistrement automatique s’active dès que le coffre est lié à un fichier, dans Edge ou Chrome.'))
     }
     const copies = el('section', 'panel')
-    copies.append(el('h2', '', 'Sauvegarde'), el('p', 'muted', 'Conserve une copie dans un second emplacement. Tu peux la rouvrir avec la phrase secrète en vigueur au moment de la copie.'), backup())
+    copies.append(el('h2', '', 'Sauvegarde'), el('p', 'muted', 'Conservez une copie dans un second emplacement. Vous pourrez la rouvrir avec la phrase secrète en vigueur au moment de la copie.'), backup())
     const secret = el('section', 'panel')
-    secret.append(el('h2', '', 'Phrase secrète'), el('p', 'muted', 'Remplace la phrase qui protège le coffre. La phrase actuelle te sera demandée.'),
+    secret.append(el('h2', '', 'Phrase secrète'), el('p', 'muted', 'Remplacez la phrase qui protège le coffre. La phrase actuelle vous sera demandée.'),
       button('Changer la phrase secrète', openRekey))
     const application = el('section', 'panel')
     application.append(el('h2', '', 'Application'), el('p', 'muted', !appVersion ? 'Version non indiquée.' : online ?
       'Version ' + appVersion + ', ouverte en ligne depuis ' + location.host + '. Le coffre reste sur cet appareil.' :
       'Version ' + appVersion + ', ouverte depuis un fichier de cet appareil.'))
     if (updateUrl) application.append(updateLink(el('a', 'secondary link-button')))
-    else application.append(el('p', 'small muted', 'Pour mettre à jour, télécharge la nouvelle version là où tu as obtenu ce fichier.'))
+    else application.append(el('p', 'small muted', 'Pour mettre à jour, téléchargez la nouvelle version là où vous avez obtenu ce fichier.'))
     application.append(el('p', 'small muted', online ?
-      'La page d’accueil du site mène toujours à la dernière version. Une version téléchargée s’ouvre depuis ton disque, sans connexion.' :
-      'Une mise à jour ne remplace que ce fichier HTML : ouvre ton coffre .sante avec la nouvelle version. Garde-la ensuite, car une version plus ancienne peut ne pas relire un coffre enregistré par une plus récente.'))
+      'La page d’accueil du site mène toujours à la dernière version. Une version téléchargée s’ouvre depuis votre disque, sans connexion.' :
+      'Une mise à jour ne remplace que ce fichier HTML : ouvrez votre coffre .sante avec la nouvelle version. Gardez-la ensuite, car une version plus ancienne peut ne pas relire un coffre enregistré par une plus récente.'))
     grid.append(device, copies, secret, application)
     const help = el('section', 'panel help-panel')
     help.append(el('h2', '', 'Chiffrement et import'),
       el('p', 'muted', 'Le fichier .sante contient les documents et les résultats chiffrés. L’application s’ouvre hors ligne, sans compte. Le coffre se verrouille après dix minutes d’inactivité.'),
-      el('p', 'muted', 'L’extraction lit le texte des PDF. Pour un scan, ajoute le fichier et saisis les résultats à partir de l’original. Tu peux aussi coller le texte d’un bilan.'),
+      el('p', 'muted', 'L’extraction lit le texte des PDF. Pour un scan, ajoutez le fichier et saisissez les résultats à partir de l’original. Vous pouvez aussi coller le texte d’un bilan.'),
       el('p', 'muted', 'Le fichier .sante permet aussi de déplacer le dossier sur un autre appareil. La phrase secrète est nécessaire pour l’ouvrir.'))
     $('view').replaceChildren(head, grid, help)
   }
@@ -143,7 +143,7 @@
     const current = $('rekey-current').value
     const next = $('rekey-new').value
     if ([...next].length < 15 || !next.trim()) {
-      notice('rekey-message', 'Choisis une nouvelle phrase secrète d’au moins 15 caractères.', 'warn')
+      notice('rekey-message', 'Choisissez une nouvelle phrase secrète d’au moins 15 caractères.', 'warn')
       return
     }
     if (next !== $('rekey-again').value) {

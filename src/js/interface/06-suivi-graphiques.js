@@ -118,7 +118,7 @@
   }
 
   function renderTracking() {
-    const head = pageHeader('Mon suivi biologique', 'Survole ou touche un point pour afficher les détails du prélèvement.',
+    const head = pageHeader('Mon suivi biologique', 'Survolez ou touchez un point pour afficher les détails du prélèvement.',
       button('Importer un bilan', () => openEditor('bio'), 'primary'))
     const series = []
     const groups = [...allGroups().values()].sort((a,b) => a.name.localeCompare(b.name,'fr'))
@@ -163,7 +163,7 @@
         drawChart(canvas, results, key)
       }
       if (!matches.length) cards.append(empty(series.length ?
-        'Aucun paramètre ne correspond à la recherche.' : 'Tes courbes apparaîtront après l’ajout de résultats numériques.'))
+        'Aucun paramètre ne correspond à la recherche.' : 'Vos courbes apparaîtront après l’ajout de résultats numériques.'))
       if (page > 0) pager.append(button('Précédent', () => {page--; render(); head.scrollIntoView()}))
       if ((page + 1) * perPage < matches.length) pager.append(button('Suivant', () => {page++; render(); head.scrollIntoView()}))
     }

@@ -6,7 +6,7 @@
     const records = session.records.filter(record => record.kind === 'measure').sort(chronological)
     if (!records.length) {
       const panel = el('section', 'panel')
-      panel.append(empty('Tes relevés apparaîtront ici, avec leurs courbes, dès la première saisie.'))
+      panel.append(empty('Vos relevés apparaîtront ici, avec leurs courbes, dès la première saisie.'))
       $('view').replaceChildren(head, panel)
       return
     }

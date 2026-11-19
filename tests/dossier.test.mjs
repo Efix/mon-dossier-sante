@@ -93,7 +93,7 @@ test('saisie d’une mesure : virgule ou point, zéros inutiles retirés', () =>
 })
 
 test('saisie d’une mesure : valeur hors bornes ou mal écrite refusée avec un message clair', () => {
-  assert.throws(() => Dossier.readMeasure('weight', '600'), /^Error: Poids : indique un nombre entre 0,5 et 400 kg, 2 décimales au plus\.$/)
+  assert.throws(() => Dossier.readMeasure('weight', '600'), /^Error: Poids : indiquez un nombre entre 0,5 et 400 kg, 2 décimales au plus\.$/)
   assert.throws(() => Dossier.readMeasure('temperature', '37,25'), /Température : .* une décimale au plus/)
   assert.throws(() => Dossier.readMeasure('systolic', '12,5'), /Tension systolique : .* sans décimale/)
   assert.throws(() => Dossier.readMeasure('spo2', '101'), /Saturation en oxygène/)

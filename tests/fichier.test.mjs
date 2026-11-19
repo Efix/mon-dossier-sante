@@ -10,12 +10,12 @@ import {sources} from '../outils/application.mjs'
 const {html, scripts, csp, empreinte} = lireApplication()
 
 test('le HTML livré est exactement l’assemblage des sources de src/', () => {
-  assert.ok(assembler().html === html, 'HTML périmé : lance « npm run build ».')
+  assert.ok(assembler().html === html, 'HTML périmé : lancez « npm run build ».')
 })
 
 test('un seul script exécutable, dont l’empreinte est celle de la CSP', () => {
   assert.equal(scripts.length, 1)
-  assert.equal(csp, empreinte(scripts[0]), 'Empreinte périmée : lance « npm run build ».')
+  assert.equal(csp, empreinte(scripts[0]), 'Empreinte périmée : lancez « npm run build ».')
 })
 
 test('fins de ligne LF uniquement (une conversion en CRLF invaliderait l’empreinte)', () => {

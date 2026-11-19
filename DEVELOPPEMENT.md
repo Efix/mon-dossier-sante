@@ -4,7 +4,7 @@ Ce document décrit le code de Mon dossier santé pour qui veut le lire ou le v�
 
 Prérequis : Node 22 ou plus récent, et git. Le projet n'a aucune dépendance à installer.
 
-Sur un nouveau clone, active le crochet qui vérifie chaque commit :
+Sur un nouveau clone, activez le crochet qui vérifie chaque commit :
 
 ```bash
 git config core.hooksPath .githooks
@@ -90,4 +90,4 @@ Les tests (Node 22 ou plus récent, sans dépendance) chargent le code depuis `s
 | `tests/publication.test.mjs` | Version déclarée par l'application, page d'accueil du site : script autorisé par sa CSP, aucune connexion, liens de téléchargement et d'ouverture, empreinte |
 | `tests/dossier.test.mjs` | Fiches (allergies, traitements, vaccinations, antécédents), traitements en cours, rappels de vaccination, saisie des mesures et IMC |
 
-Tous les bilans des tests sont fictifs. Pour couvrir un vrai compte rendu, ajoute son texte **anonymisé** dans `tests/parseur.test.mjs` avec les lignes attendues.
+Tous les bilans des tests sont fictifs. Pour couvrir un vrai compte rendu, ajoutez son texte **anonymisé** dans `tests/parseur.test.mjs` avec les lignes attendues.

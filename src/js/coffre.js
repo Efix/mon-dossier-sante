@@ -139,7 +139,7 @@
       try {
         return checkRecord(stored(record), ids)
       } catch {
-        throw Error('Le document « ' + String(record?.title ?? '').slice(0, 80) + ' » contient un champ invalide ou trop long. Corrige-le avant d’enregistrer.')
+        throw Error('Le document « ' + String(record?.title ?? '').slice(0, 80) + ' » contient un champ invalide ou trop long. Corrigez-le avant d’enregistrer.')
       }
     })
     // Format 2 dès qu'une fiche structurée existe : une ancienne version de l'application refuse alors le coffre
@@ -189,7 +189,7 @@
   async function inspect(blob) {
     if (!(blob instanceof Blob) || blob.size < headerLength + 20 || blob.size > MAX_VAULT) throw Error('Taille de coffre invalide.')
     const header = new Uint8Array(await blob.slice(0, headerLength).arrayBuffer())
-    if (!sameBytes(header.slice(0, magic.length), magic)) throw Error('Sélectionne un fichier .sante créé par cette application.')
+    if (!sameBytes(header.slice(0, magic.length), magic)) throw Error('Sélectionnez un fichier .sante créé par cette application.')
     return {header, salt:header.slice(8, 24), iv:header.slice(24, 36)}
   }
 
@@ -260,7 +260,7 @@
   }
 
   async function attachment(file) {
-    if (file.size < 1 || file.size > MAX_DOCUMENT) throw Error('Choisis un document non vide de 30 Mo maximum.')
+    if (file.size < 1 || file.size > MAX_DOCUMENT) throw Error('Choisissez un document non vide de 30 Mo maximum.')
     const bytes = new Uint8Array(await file.arrayBuffer())
     const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes))
     return {name:safeName(file.name), bytes, hash:Array.from(digest, byte => byte.toString(16).padStart(2, '0')).join('')}
@@ -283,7 +283,7 @@
       if (expectedHeader) {
         const disk = await handle.getFile()
         const header = new Uint8Array(await disk.slice(0, headerLength).arrayBuffer())
-        if (!sameBytes(header, expectedHeader)) throw Error('Ce fichier a changé. Enregistre tes modifications dans une copie du coffre.')
+        if (!sameBytes(header, expectedHeader)) throw Error('Ce fichier a changé. Enregistrez vos modifications dans une copie du coffre.')
       }
       await writable.write(sealed.blob)
       await writable.close()

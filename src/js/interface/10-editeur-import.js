@@ -105,7 +105,7 @@
     const biology = $('doc-kind').value === 'bio'
     $('attachment-name').textContent = draft.file ?
       draft.file.name + (draft.loading && pdf ? ' · Lecture du PDF…' : '') :
-      biology ? 'Choisis un PDF avec du texte sélectionnable pour remplir les valeurs automatiquement.' :
+      biology ? 'Choisissez un PDF avec du texte sélectionnable pour remplir les valeurs automatiquement.' :
       'PDF ou autre fichier, 30 Mo maximum.'
     $('source-choose').textContent = draft.file ? 'Changer de fichier' : 'Choisir un fichier'
     $('source-remove').hidden = !draft.file
@@ -152,7 +152,7 @@
         await extractAttachment(active, detectKind)
         if (draft !== active) return
       } else if (biology && !Coffre.isPDF(attachment.bytes)) {
-        notice('import-message', 'L’extraction automatique lit les PDF avec du texte. Tu peux saisir ou coller les valeurs pour ce fichier.', 'warn')
+        notice('import-message', 'L’extraction automatique lit les PDF avec du texte. Vous pouvez saisir ou coller les valeurs pour ce fichier.', 'warn')
       }
       if (!$('doc-title').value) {
         $('doc-title').value = ($('doc-kind').value === 'bio' ? 'Bilan biologique' :
@@ -192,7 +192,7 @@
     if (urineSkipped) ignored.push(urineSkipped + ' ligne(s) d’analyse d’urine laissée(s) de côté.')
     const omissions = ignored.length ? ' Non repris, à ajouter à la main si besoin : ' + ignored.join(' ') : ''
     if (!rows.length) {
-      notice('import-message', 'Aucun résultat reconnu. Tu peux joindre l’original et saisir les valeurs à la main.' + omissions, 'warn')
+      notice('import-message', 'Aucun résultat reconnu. Vous pouvez joindre l’original et saisir les valeurs à la main.' + omissions, 'warn')
       return
     }
     $('result-editor').replaceChildren()
@@ -201,8 +201,8 @@
     draft.changed = true
     $('confirm-results').hidden = false
     $('checked-results').checked = false
-    notice('import-message', rows.slice(0, 1000).length + ' valeur(s) proposée(s). Vérifie-les avec l’original et complète les lignes manquantes.' +
-      (multipleDates ? ' Plusieurs dates de prélèvement figurent dans le document. Vérifie chaque date.' : '') + omissions,
+    notice('import-message', rows.slice(0, 1000).length + ' valeur(s) proposée(s). Vérifiez-les avec l’original et complétez les lignes manquantes.' +
+      (multipleDates ? ' Plusieurs dates de prélèvement figurent dans le document. Vérifiez chaque date.' : '') + omissions,
       multipleDates || unknown.length || unnamed ? 'warn' : '')
   }
 
@@ -260,7 +260,7 @@
   // Ne remplace jamais une saisie : seuls les champs vides, ou encore égaux à ce qui a été proposé, sont remplis.
   function acceptReport(report, detectKind, prefix = '') {
     if (!report) {
-      notice('report-message', detectKind ? '' : 'Aucun élément reconnu dans ce document : complète les champs à la main.', 'warn')
+      notice('report-message', detectKind ? '' : 'Aucun élément reconnu dans ce document : complétez les champs à la main.', 'warn')
       return
     }
     if (detectKind && report.kind && $('doc-kind').value === 'other') {
@@ -283,7 +283,7 @@
     }
     if (filled.length) {
       draft.changed = true
-      notice('report-message', prefix + 'Repris du compte rendu : ' + filled.join(', ') + '. Vérifie avec l’original.')
+      notice('report-message', prefix + 'Repris du compte rendu : ' + filled.join(', ') + '. Vérifiez avec l’original.')
     } else {
       notice('report-message', prefix || (detectKind ? '' : 'Rien de nouveau : les champs déjà remplis sont conservés.'))
     }
@@ -313,7 +313,7 @@
   $('read-report').addEventListener('click', reread)
   $('parse-text').addEventListener('click', () => {
     if (!draft || draft.loading) return
-    if (!$('paste-text').value.trim()) { notice('import-message', 'Colle le texte du compte rendu pour lancer la lecture.', 'warn'); return }
+    if (!$('paste-text').value.trim()) { notice('import-message', 'Collez le texte du compte rendu pour lancer la lecture.', 'warn'); return }
     if ($('result-editor').children.length && !confirm('Remplacer les lignes actuelles si des résultats sont trouvés dans ce texte ?')) return
     acceptProposals(Lab.parse(Lab.pagesFromText($('paste-text').value), $('doc-lab').value))
   })
@@ -369,19 +369,19 @@
       const lab = kind === 'bio' ? ($('doc-lab').value === 'auto' ? 'other' : $('doc-lab').value) : ''
       const date = $('doc-date').value
       const title = $('doc-title').value.trim()
-      if (!title || !Lab.validDate(date)) throw Error('Indique un titre et une date valide.')
+      if (!title || !Lab.validDate(date)) throw Error('Indiquez un titre et une date valide.')
       const items = Array.from($('result-editor').children)
       if (kind === 'bio' && items.length && draft.proposed && !$('checked-results').checked) {
         $('checked-results').focus()
-        throw Error('Confirme la vérification des résultats extraits avant de les ajouter.')
+        throw Error('Confirmez la vérification des résultats extraits avant de les ajouter.')
       }
       if (kind !== 'bio' && items.length && !confirm('Changer le type de document et retirer ses résultats structurés ?')) return
       const results = []
       if (kind === 'bio') for (const entry of items) {
         const values = Object.fromEntries(Array.from(entry.querySelectorAll('[data-field]'), input => [input.dataset.field, input.value.trim()]))
         if (Object.values(values).every(value => !value)) continue
-        if (!values.name || !values.value) throw Error('Chaque résultat doit avoir un nom et une valeur. Retire les lignes incomplètes.')
-        if (values.date && !Lab.validDate(values.date)) throw Error('Vérifie la date de prélèvement de ' + values.name + '.')
+        if (!values.name || !values.value) throw Error('Chaque résultat doit avoir un nom et une valeur. Retirez les lignes incomplètes.')
+        if (values.date && !Lab.validDate(values.date)) throw Error('Vérifiez la date de prélèvement de ' + values.name + '.')
         for (const [field, label, limit] of [['name','Analyse',160], ['value','Valeur',240], ['unit','Unité',60], ['reference','Référence du labo',600]]) {
           if (values[field].length > limit) {
             entry.querySelector('[data-field=' + field + ']').focus()
@@ -404,7 +404,7 @@
       try {
         Coffre.check(record)
       } catch {
-        throw Error('Ce document contient un champ vide, trop long ou invalide. Vérifie le titre, les notes et chaque résultat.')
+        throw Error('Ce document contient un champ vide, trop long ou invalide. Vérifiez le titre, les notes et chaque résultat.')
       }
       const editing = Boolean(draft.id)
       if (editing) session.records = session.records.map(old => old.id === record.id ? record : old)

@@ -33,7 +33,7 @@
   function idleLock() {
     if (draft?.changed && !graceUsed) {
       graceUsed = true
-      notice('editor-message', 'Coffre inactif : il se verrouillera dans dix minutes et ce brouillon sera perdu. Ajoute le document au dossier pour le conserver.', 'warn')
+      notice('editor-message', 'Coffre inactif : il se verrouillera dans dix minutes et ce brouillon sera perdu. Ajoutez le document au dossier pour le conserver.', 'warn')
       timer = setTimeout(idleLock, idleMs)
       return
     }
@@ -57,15 +57,15 @@
     $('confirm-password').hidden = mode !== 'create'
     $('passphrase-again').required = mode === 'create'
     $('access-heading').textContent = mode === 'create' ? 'Créer le coffre' : 'Ouvrir mon dossier'
-    $('access-subtitle').textContent = mode === 'open' ? 'Entre la phrase secrète de ton coffre.' :
-      mode === 'create' ? 'Choisis la phrase secrète qui protégera tes dossiers.' :
-      'Sélectionne un fichier .sante ou crée un coffre.'
+    $('access-subtitle').textContent = mode === 'open' ? 'Saisissez la phrase secrète de votre coffre.' :
+      mode === 'create' ? 'Choisissez la phrase secrète qui protégera vos dossiers.' :
+      'Sélectionnez un fichier .sante ou créez un coffre.'
     $('access-submit').textContent = mode === 'create' ? 'Créer mon coffre' : 'Déverrouiller'
     $('access-form').reset()
     $('open-file').value = ''
     notice('access-message')
     if (mode) $('passphrase').focus()
-    else if (lockedCopy?.dirty) notice('access-message', 'Des modifications sont en attente. Déverrouille le coffre en cours pour les enregistrer.', 'warn')
+    else if (lockedCopy?.dirty) notice('access-message', 'Des modifications sont en attente. Déverrouillez le coffre en cours pour les enregistrer.', 'warn')
   }
 
   function canReplaceSession() {
@@ -116,7 +116,7 @@
     const passphrase = $('passphrase').value
     const creating = accessMode === 'create'
     if (creating && ([...passphrase].length < 15 || !passphrase.trim())) {
-      notice('access-message', 'Choisis une phrase secrète d’au moins 15 caractères.', 'warn')
+      notice('access-message', 'Choisissez une phrase secrète d’au moins 15 caractères.', 'warn')
       return
     }
     if (creating && passphrase !== $('passphrase-again').value) {
@@ -133,7 +133,7 @@
         session = {key, salt, records:[], handle:null, header:null, dirty:true, current:null}
       } else {
         const selected = pendingOpen
-        if (!selected) throw Error('Sélectionne un coffre.')
+        if (!selected) throw Error('Sélectionnez un coffre.')
         const loaded = await Coffre.open(selected.blob, passphrase)
         session = {
           ...loaded, handle:selected.handle, dirty:selected.dirty, current:selected.blob,
@@ -179,7 +179,7 @@
       }
       if (handle && typeof handle.requestPermission === 'function') {
         const status = await handle.requestPermission({mode:'readwrite'})
-        if (status !== 'granted') throw Error('Accès en écriture refusé. Télécharge une copie chiffrée depuis la section Coffre.')
+        if (status !== 'granted') throw Error('Accès en écriture refusé. Téléchargez une copie chiffrée depuis la section Coffre.')
       }
       const key = rekey?.key ?? session.key
       const salt = rekey?.salt ?? session.salt
@@ -192,8 +192,8 @@
       const adopted = !copy || sameFile || (session.dirty && !handle && !session.handle)
       if (adopted) session = {...session, key, salt, handle, header:sealed.header, dirty:false, current:sealed.blob}
       const message = handle ? (copy && !sameFile ? 'Copie chiffrée enregistrée.' : 'Coffre enregistré.') :
-        adopted ? 'Fichier .sante chiffré téléchargé. Préfère cette version à la prochaine ouverture.' :
-        session.dirty ? 'Copie chiffrée téléchargée avec tes modifications en cours. Le fichier du coffre ouvert reste à enregistrer.' :
+        adopted ? 'Fichier .sante chiffré téléchargé. Utilisez cette version à la prochaine ouverture.' :
+        session.dirty ? 'Copie chiffrée téléchargée avec vos modifications en cours. Le fichier du coffre ouvert reste à enregistrer.' :
         'Copie chiffrée téléchargée.'
       // Une écriture réussie dans le fichier du coffre lève la suspension de l'enregistrement automatique.
       const resumed = autosaveSuspended && adopted && Boolean(handle)
@@ -205,7 +205,7 @@
       if (rekey) throw error
       if (auto) autosaveSuspended = true
       notice('app-message', say(prefix, error.message,
-        auto && 'L’enregistrement automatique est suspendu : utilise « Enregistrer le coffre ».'), 'error')
+        auto && 'L’enregistrement automatique est suspendu : utilisez « Enregistrer le coffre ».'), 'error')
       if (auto && view === 'vault') renderVault()
       return false
     } finally {
@@ -220,7 +220,7 @@
     session.dirty = true
     refreshStatus()
     if (autosave && !autosaveSuspended && session.handle) void save({auto:true, prefix:text})
-    else notice('app-message', text + ' Enregistre le coffre pour conserver cette modification.')
+    else notice('app-message', text + ' Enregistrez le coffre pour conserver cette modification.')
   }
 
   async function lock() {

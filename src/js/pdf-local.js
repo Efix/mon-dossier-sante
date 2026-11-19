@@ -77,7 +77,7 @@
       })
       const read = async () => {
         const source = await task.promise
-        if (source.numPages > 120) throw Error('L’extraction est limitée aux PDF de 120 pages. Tu peux archiver ce fichier et saisir les valeurs.')
+        if (source.numPages > 120) throw Error('L’extraction est limitée aux PDF de 120 pages. Vous pouvez archiver ce fichier et saisir les valeurs.')
         const pages = []
         let chars = 0
         for (let number = 1; number <= source.numPages; number++) {
@@ -85,23 +85,23 @@
           const content = await page.getTextContent()
           const lines = layout(content.items)
           chars += lines.reduce((count, line) => count + line.length, 0)
-          if (chars > 1000000) throw Error('Ce texte est trop long pour l’extraction. Tu peux archiver le PDF et saisir les résultats.')
+          if (chars > 1000000) throw Error('Ce texte est trop long pour l’extraction. Vous pouvez archiver le PDF et saisir les résultats.')
           pages.push({number, lines})
           page.cleanup()
         }
         return pages
       }
       const timeout = new Promise((_, reject) => {
-        timer = setTimeout(() => reject(Error('La lecture du PDF a expiré. Tu peux archiver le fichier ou coller son texte.')), 20000)
+        timer = setTimeout(() => reject(Error('La lecture du PDF a expiré. Vous pouvez archiver le fichier ou coller son texte.')), 20000)
       })
       return await Promise.race([read(), timeout])
     } catch (error) {
-      if (error.name === 'PasswordException') throw Error('Ce PDF est protégé. Tu peux conserver l’original et coller le texte après l’avoir ouvert avec son mot de passe.')
+      if (error.name === 'PasswordException') throw Error('Ce PDF est protégé. Vous pouvez conserver l’original et coller le texte après l’avoir ouvert avec son mot de passe.')
       if (error.name === 'InvalidPDFException' || error.name === 'UnknownErrorException') {
-        throw Error('Le texte de ce PDF n’a pas pu être lu. Tu peux l’archiver et saisir les résultats.')
+        throw Error('Le texte de ce PDF n’a pas pu être lu. Vous pouvez l’archiver et saisir les résultats.')
       }
       if (error.message.startsWith('L’extraction') || error.message.startsWith('Ce texte') || error.message.startsWith('La lecture')) throw error
-      throw Error('Lecture du PDF indisponible. Essaie de coller son texte ou de saisir les valeurs.')
+      throw Error('Lecture du PDF indisponible. Essayez de coller son texte ou de saisir les valeurs.')
     } finally {
       clearTimeout(timer)
       if (task) await task.destroy().catch(() => {})
@@ -142,8 +142,8 @@
       if (task) await task.destroy().catch(() => {})
       if (workerURL) URL.revokeObjectURL(workerURL)
       throw Error(error?.name === 'PasswordException' ?
-        'Ce PDF est protégé par un mot de passe et ne peut pas être affiché ici. Tu peux télécharger l’original.' :
-        'Ce PDF n’a pas pu être affiché. Tu peux télécharger l’original.')
+        'Ce PDF est protégé par un mot de passe et ne peut pas être affiché ici. Vous pouvez télécharger l’original.' :
+        'Ce PDF n’a pas pu être affiché. Vous pouvez télécharger l’original.')
     } finally {
       clearTimeout(timer)
     }

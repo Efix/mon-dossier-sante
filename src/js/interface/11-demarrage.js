@@ -4,7 +4,7 @@
   for (const [key, label] of Object.entries(Coffre.labs)) $('doc-lab').add(option(key, label))
   for (const [, label] of Lab.markers) $('marker-names').append(option(label, label))
   if (!window.isSecureContext || !window.crypto?.subtle) {
-    notice('access-message', 'Ouvre ce fichier dans un navigateur de bureau récent, par exemple Edge ou Chrome, pour utiliser le chiffrement.', 'warn')
+    notice('access-message', 'Ouvrez ce fichier dans un navigateur de bureau récent, par exemple Edge ou Chrome, pour utiliser le chiffrement.', 'warn')
     $('choose-vault').disabled = true
     $('new-vault').disabled = true
   }

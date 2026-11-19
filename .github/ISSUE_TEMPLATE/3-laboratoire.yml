@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Ne joins pas ton compte rendu**, même partiellement masqué : un PDF garde souvent des informations invisibles à l'écran. Décris plutôt sa mise en page, ou recopie quelques lignes en remplaçant tous les noms, dates et résultats par des valeurs inventées.
+        **Ne joignez pas votre compte rendu**, même partiellement masqué : un PDF garde souvent des informations invisibles à l'écran. Décrivez plutôt sa mise en page, ou recopiez quelques lignes en remplaçant tous les noms, dates et résultats par des valeurs inventées.
   - type: input
     id: version
     attributes:

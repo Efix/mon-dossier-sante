@@ -62,7 +62,7 @@
     const number = numberOf(value)
     const places = rule.decimals ? (rule.decimals === 1 ? 'une décimale' : rule.decimals + ' décimales') + ' au plus' : 'sans décimale'
     if (!/^\d+(?:,\d+)?$/.test(value) || !(number >= rule.min && number <= rule.max) || (value.split(',')[1]?.length ?? 0) > rule.decimals) {
-      throw Error(metric.label + ' : indique un nombre entre ' + decimal.format(rule.min) + ' et ' + decimal.format(rule.max) +
+      throw Error(metric.label + ' : indiquez un nombre entre ' + decimal.format(rule.min) + ' et ' + decimal.format(rule.max) +
         ' ' + metric.unit + ', ' + places + '.')
     }
     return value
@@ -75,8 +75,8 @@
       const value = readMeasure(key, input[key])
       if (value) fields[key] = value
     }
-    if (!Object.keys(fields).length) throw Error('Indique au moins une mesure.')
-    if (Boolean(fields.systolic) !== Boolean(fields.diastolic)) throw Error('Indique les deux chiffres de la tension : systolique et diastolique.')
+    if (!Object.keys(fields).length) throw Error('Indiquez au moins une mesure.')
+    if (Boolean(fields.systolic) !== Boolean(fields.diastolic)) throw Error('Indiquez les deux chiffres de la tension : systolique et diastolique.')
     if (fields.systolic && numberOf(fields.systolic) <= numberOf(fields.diastolic)) {
       throw Error('La tension systolique (le premier chiffre) doit dépasser la diastolique.')
     }

@@ -20,10 +20,10 @@ function scriptAccueil() {
   $('depuis').hidden = false
   if (ancienne) {
     $('depuis').className = 'encart nouvelle'
-    $('depuis-texte').textContent = `Tu utilises la version ${depuis}. La version ${derniere} est disponible : ` +
-      'télécharge-la ci-dessous, puis ouvre ton coffre .sante avec. Le coffre ne change pas.'
+    $('depuis-texte').textContent = `Vous utilisez la version ${depuis}. La version ${derniere} est disponible : ` +
+      'téléchargez-la ci-dessous, puis ouvrez votre coffre .sante avec. Le coffre ne change pas.'
   } else {
-    $('depuis-texte').textContent = `Tu utilises la version ${depuis} : c’est la dernière publiée, aucune mise à jour à faire.`
+    $('depuis-texte').textContent = `Vous utilisez la version ${depuis} : c’est la dernière publiée, aucune mise à jour à faire.`
   }
 }
 
@@ -68,7 +68,7 @@ export function pageAccueil({versions, depot}) {
 </head>
 <body>
   <h1>Mon dossier santé</h1>
-  <p class="muted">Tes bilans et documents de santé, dans un coffre chiffré que tu gardes sur ton appareil. L’application fonctionne entièrement dans ton navigateur (Edge ou Chrome, sur ordinateur) : elle n’envoie rien et ne se connecte à aucun serveur.</p>
+  <p class="muted">Vos bilans et documents de santé, dans un coffre chiffré que vous gardez sur votre appareil. L’application fonctionne entièrement dans votre navigateur (Edge ou Chrome, sur ordinateur) : elle n’envoie rien et ne se connecte à aucun serveur.</p>
 
   <div id="depuis" class="encart" hidden><p id="depuis-texte"></p></div>
 
@@ -78,16 +78,16 @@ export function pageAccueil({versions, depot}) {
       <a class="bouton principal" href="${echapper(derniere.tag)}/${echapper(derniere.fichier)}" download>Télécharger l’application (${taille(derniere.octets)})</a>
       <a class="bouton second" href="${echapper(derniere.tag)}/">Essayer en ligne</a>
     </div>
-    <p><strong>Téléchargée</strong>, c’est un seul fichier HTML, à ouvrir depuis ton disque, même sans connexion. Une fois vérifié, il ne change plus : c’est la façon la plus sûre de l’utiliser. Pour la mettre à jour, utilise « Rechercher une mise à jour » dans l’application (page Coffre).</p>
+    <p><strong>Téléchargée</strong>, c’est un seul fichier HTML, à ouvrir depuis votre disque, même sans connexion. Une fois vérifié, il ne change plus : c’est la façon la plus sûre de l’utiliser. Pour la mettre à jour, utilisez « Rechercher une mise à jour » dans l’application (page Coffre).</p>
     <p><strong>En ligne</strong>, rien à installer, mais chaque visite fait confiance au site qui envoie la page.</p>
-    <p><strong>Important</strong> : sans ta phrase secrète, ton coffre ne peut pas être ouvert, par personne. Garde-la, et garde des copies du coffre. Les valeurs lues dans les PDF sont des propositions à vérifier avec l’original ; l’application range tes documents, elle ne donne pas d’avis médical.</p>
+    <p><strong>Important</strong> : sans votre phrase secrète, votre coffre ne peut pas être ouvert, par personne. Conservez-la, et gardez des copies du coffre. Les valeurs lues dans les PDF sont des propositions à vérifier avec l’original ; l’application range vos documents, elle ne donne pas d’avis médical.</p>
   </section>
 
   <section>
     <h2>Vérifier le fichier téléchargé</h2>
     <p>Son empreinte SHA-256 doit être exactement celle-ci, également notée dans le <a href="${echapper(registre)}">registre du dépôt public</a> où chaque version est inscrite une fois pour toutes :</p>
     <p><code>${echapper(derniere.empreinte)}</code></p>
-    <p>Pour la calculer sur ton appareil, dans le dossier de téléchargement :</p>
+    <p>Pour la calculer sur votre appareil, dans le dossier de téléchargement :</p>
     <p>Windows (PowerShell)</p>
     <pre>Get-FileHash .\\${echapper(derniere.fichier)}</pre>
     <p>macOS ou Linux</p>

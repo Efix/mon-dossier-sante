@@ -42,7 +42,7 @@ function lireRegistre() {
 
 const tags = git('tag', '--list', 'v*', '--sort=v:refname').toString().split('\n').filter(tag => formatTag.test(tag))
 if (!tags.length) {
-  console.error('Aucune version à publier : crée d’abord une version, par exemple avec « npm version patch ».')
+  console.error('Aucune version à publier : créez d’abord une version, par exemple avec « npm version patch ».')
   process.exit(1)
 }
 
@@ -66,15 +66,15 @@ for (const tag of tags) {
   const notee = connues.get(tag)
   if (notee && notee !== empreinte) {
     throw Error(`${tag} a déjà été publiée avec l'empreinte ${notee}, mais le tag donne aujourd'hui ${empreinte}.\n` +
-      'Une version publiée ne change jamais : publie une nouvelle version plutôt que de déplacer un tag.')
+      'Une version publiée ne change jamais : publiez une nouvelle version plutôt que de déplacer un tag.')
   }
   if (!notee && registreSeul) {
-    throw Error(`${tag} n'est pas notée dans versions-publiees.txt : lance « npm run publier » puis commite ce fichier.`)
+    throw Error(`${tag} n'est pas notée dans versions-publiees.txt : lancez « npm run publier » puis commitez ce fichier.`)
   }
   // L'application affiche sa version : ce doit être celle du tag. Les versions déjà notées peuvent n'en déclarer aucune.
   const declaree = texte.match(/<meta name="application-version" content="([^"]*)">/)?.[1]
   if (declaree !== undefined ? 'v' + declaree !== tag : !notee) {
-    throw Error(`${tag} : l'application déclare la version « ${declaree ?? 'aucune'} ». Crée les versions avec « npm version patch » ` +
+    throw Error(`${tag} : l'application déclare la version « ${declaree ?? 'aucune'} ». Créez les versions avec « npm version patch » ` +
       '(ou minor, major) : il met à jour package.json, reconstruit le HTML et pose le tag en une fois.')
   }
   if (!notee) nouvelles.push({tag, empreinte})
@@ -108,6 +108,6 @@ console.log(`Publication prête dans publication/ : ${versions.length} version(s
 for (const {tag, empreinte} of versions) console.log(`  ${tag}  ${empreinte}`)
 if (nouvelles.length) {
   console.log(`\nNouvelle(s) version(s) notée(s) dans versions-publiees.txt : ${nouvelles.map(v => v.tag).join(', ')}.` +
-    (commiter ? '\nRegistre commité. Envoie le tout avec « git push --follow-tags ».' :
-      '\nCommite ce fichier : il protège ces versions contre toute modification ultérieure.'))
+    (commiter ? '\nRegistre commité. Envoyez le tout avec « git push --follow-tags ».' :
+      '\nCommitez ce fichier : il protège ces versions contre toute modification ultérieure.'))
 }

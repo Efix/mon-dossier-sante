@@ -1,9 +1,9 @@
   function renderHome() {
     const records = [...session.records].sort(chronological)
-    const head = pageHeader('Vue d’ensemble', 'Tes résultats d’analyses, ordonnances et autres documents de santé.')
+    const head = pageHeader('Vue d’ensemble', 'Vos résultats d’analyses, ordonnances et autres documents de santé.')
     const banner = el('div', 'banner')
     const intro = el('div')
-    intro.append(el('h2', '', 'Ajouter un bilan biologique'), el('p', 'muted', 'Importe un PDF Cerballiance ou Check-Up, puis vérifie les résultats proposés.'))
+    intro.append(el('h2', '', 'Ajouter un bilan biologique'), el('p', 'muted', 'Importez un PDF Cerballiance ou Check-Up, puis vérifiez les résultats proposés.'))
     banner.append(intro, button('Importer un bilan', () => openEditor('bio'), 'primary'))
     const stats = el('div', 'grid-stats')
     for (const [value, label] of [[records.length, 'Éléments au dossier'], [records.filter(item => item.kind === 'bio').length, 'Bilans'], [allGroups().size, 'Paramètres suivis']]) {
@@ -21,7 +21,7 @@
     }
     const recent = el('section', 'panel')
     section(recent, 'Éléments récents', button('Ajouter un document', () => openEditor('other')))
-    recent.append(listRecords(records.slice(0, 6), 'Tes documents s’afficheront ici dès le premier ajout.'))
+    recent.append(listRecords(records.slice(0, 6), 'Vos documents s’afficheront ici dès le premier ajout.'))
     panels.append(recent)
     $('view').replaceChildren(head, banner, stats, panels)
   }
