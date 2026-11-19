@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Signaler une faille de sécurité
+    url: https://github.com/Efix/mon-dossier-sante/security/advisories/new
+    about: En privé, jamais dans un ticket public. Voir SECURITY.md.
+  - name: Télécharger l'application
+    url: https://efix.github.io/mon-dossier-sante/
+    about: Dernière version, empreinte et vérification du fichier.

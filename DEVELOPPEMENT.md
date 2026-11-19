@@ -1,6 +1,6 @@
 # Développement
 
-Ce document s'adresse à qui veut lire, modifier ou publier le code de Mon dossier santé. Pour utiliser l'application, voir le [README](README.md).
+Ce document décrit le code de Mon dossier santé pour qui veut le lire ou le vérifier, et le travail du mainteneur pour le modifier et le publier. Pour utiliser l'application, voir le [README](README.md). Le code n'est pas sous licence libre : voir [LICENSE](LICENSE) et [CONTRIBUTING.md](CONTRIBUTING.md).
 
 Prérequis : Node 22 ou plus récent, et git. Le projet n'a aucune dépendance à installer.
 

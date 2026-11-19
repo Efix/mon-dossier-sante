@@ -1,0 +1,28 @@
+name: Proposer une idée
+description: Une fonction qui te manque, une amélioration, une formulation peu claire.
+title: "[Idée] "
+labels: ["idée"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Les idées sont lues avec attention, même si toutes ne peuvent pas être retenues. L'application restera hors ligne, sans compte ni serveur : une idée qui demanderait une connexion réseau ne pourra pas être retenue.
+  - type: textarea
+    id: besoin
+    attributes:
+      label: Ton besoin
+      description: Ce que tu cherches à faire, et ce qui t'en empêche aujourd'hui.
+    validations:
+      required: true
+  - type: textarea
+    id: proposition
+    attributes:
+      label: Ce que tu proposes
+      description: Facultatif. Comment l'application pourrait y répondre.
+  - type: checkboxes
+    id: donnees
+    attributes:
+      label: Données personnelles
+      options:
+        - label: Ce ticket ne contient aucune donnée de santé ni information personnelle réelle.
+          required: true

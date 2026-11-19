@@ -1,0 +1,58 @@
+name: Laboratoire ou compte rendu mal lu
+description: Les résultats d'un bilan ou les informations d'un compte rendu ne sont pas repris correctement.
+title: "[Lecture] "
+labels: ["lecture des PDF"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Ne joins pas ton compte rendu**, même partiellement masqué : un PDF garde souvent des informations invisibles à l'écran. Décris plutôt sa mise en page, ou recopie quelques lignes en remplaçant tous les noms, dates et résultats par des valeurs inventées.
+  - type: input
+    id: version
+    attributes:
+      label: Version de l'application
+      placeholder: "1.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: type
+    attributes:
+      label: Type de document
+      options:
+        - Bilan biologique
+        - Compte rendu d'imagerie
+        - Compte rendu de consultation
+        - Autre
+    validations:
+      required: true
+  - type: input
+    id: laboratoire
+    attributes:
+      label: Laboratoire, centre ou logiciel d'origine
+      description: Le nom figurant en en-tête du document.
+      placeholder: "Biogroup, Synlab, centre d'imagerie…"
+    validations:
+      required: true
+  - type: textarea
+    id: probleme
+    attributes:
+      label: Ce qui est mal lu
+      description: Valeurs manquantes, unités mélangées, mauvaise date, rien n'est reconnu…
+    validations:
+      required: true
+  - type: textarea
+    id: mise-en-page
+    attributes:
+      label: Mise en page du document
+      description: Colonnes, titres de sections, ordre des informations. Exemple fictif bienvenu.
+      render: text
+      placeholder: |
+        HEMATOLOGIE
+        Hémoglobine ........ 14,2 g/dL    (13,0 - 17,0)
+  - type: checkboxes
+    id: donnees
+    attributes:
+      label: Données personnelles
+      options:
+        - label: Ce ticket ne contient aucune donnée de santé ni information personnelle réelle.
+          required: true

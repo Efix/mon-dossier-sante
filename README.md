@@ -110,8 +110,18 @@ Mon dossier santé est un outil personnel d'organisation. Ce n'est pas un dispos
 
 ## Signaler un problème
 
-Ouvre un ticket dans l'onglet [Issues](https://github.com/Efix/mon-dossier-sante/issues) du dépôt. **N'y joins jamais un vrai document médical, un coffre ou une capture contenant tes données** : les tickets sont publics. Si un compte rendu est mal lu, décris sa mise en page ou fournis un exemple dont tu as remplacé toutes les informations personnelles.
+Ouvre un ticket depuis l'onglet [Issues](https://github.com/Efix/mon-dossier-sante/issues/new/choose), avec le modèle qui correspond : problème, idée, ou document mal lu. **N'y joins jamais un vrai document médical, un coffre ou une capture contenant tes données** : les tickets sont publics.
+
+- Une faille de sécurité se signale en privé : voir la [politique de sécurité](SECURITY.md).
+- Une difficulté d'accessibilité : voir la [déclaration d'accessibilité](ACCESSIBILITY.md).
+- Les échanges suivent le [code de conduite](CODE_OF_CONDUCT.md).
 
 ## Contribuer
 
-L'organisation du code, la construction de l'application, les tests et la publication des versions sont décrits dans [DEVELOPPEMENT.md](DEVELOPPEMENT.md).
+Les signalements et les idées sont les bienvenus ; les demandes de fusion ne sont pas acceptées pour l'instant. Tout est expliqué dans [CONTRIBUTING.md](CONTRIBUTING.md). Le fonctionnement du code est décrit dans [DEVELOPPEMENT.md](DEVELOPPEMENT.md).
+
+## Licence
+
+Copyright © 2026 Efix. Tous droits réservés.
+
+Tu peux télécharger et utiliser gratuitement les versions publiées pour gérer tes propres documents de santé, et lire le code pour le vérifier. Le code n'est pas sous licence libre : le reproduire, le modifier ou redistribuer l'application demande une autorisation écrite. Les conditions exactes sont dans [LICENSE](LICENSE). PDF.js, inclus dans l'application, reste sous licence Apache 2.0.

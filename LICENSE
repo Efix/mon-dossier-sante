@@ -1,0 +1,51 @@
+Mon dossier santé
+Copyright (c) 2026 Efix. Tous droits réservés.
+
+Le code source de ce dépôt est public pour pouvoir être lu et vérifié. Il n'est
+pas distribué sous une licence libre ou open source.
+
+
+CE QUI EST PERMIS
+
+1. Télécharger les versions publiées de l'application, depuis
+   https://efix.github.io/mon-dossier-sante/ ou depuis ce dépôt, et les utiliser
+   gratuitement, sans les modifier, pour gérer ses propres documents de santé ou
+   ceux d'une personne dont on a la charge.
+
+2. Lire le code source et le faire examiner, notamment pour vérifier la
+   sécurité de l'application ou l'empreinte d'une version publiée.
+
+3. Exercer les droits que les conditions d'utilisation de GitHub accordent à
+   tout utilisateur d'un dépôt public : afficher ce dépôt et en créer une copie
+   (« fork ») sur GitHub. Cette copie reste soumise à la présente licence.
+
+
+CE QUI EST INTERDIT SANS AUTORISATION ÉCRITE PRÉALABLE DU TITULAIRE
+
+1. Reproduire tout ou partie du code dans un autre logiciel ou un autre projet.
+
+2. Modifier le code, ou utiliser ou diffuser une version modifiée.
+
+3. Redistribuer l'application, la vendre, la proposer sur un autre site ou
+   l'intégrer à un produit ou à un service, gratuit ou payant.
+
+4. Retirer ou modifier cette mention de droits.
+
+Pour toute demande d'autorisation, ouvre une discussion dans les tickets du
+dépôt : https://github.com/Efix/mon-dossier-sante/issues
+
+
+COMPOSANTS TIERS
+
+L'application inclut PDF.js (Mozilla Foundation), placé dans src/vendor/pdfjs/
+et distribué sous licence Apache 2.0. Ce composant reste soumis à sa propre
+licence, dont le texte est reproduit dans l'application.
+
+
+GARANTIE
+
+L'application est fournie « en l'état », sans garantie d'aucune sorte, dans les
+limites permises par la loi. Ce n'est pas un dispositif médical : elle ne
+remplace ni l'avis d'un professionnel de santé, ni la conservation des
+documents d'origine. Sa sécurité repose sur la phrase secrète choisie par
+l'utilisateur, qui ne peut être récupérée par personne en cas d'oubli.

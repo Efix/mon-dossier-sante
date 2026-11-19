@@ -1,0 +1,64 @@
+name: Signaler un problème
+description: Une erreur, un comportement inattendu, un résultat mal affiché.
+title: "[Problème] "
+labels: ["problème"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Merci de prendre le temps de signaler ce problème.
+
+        **Ce ticket sera public.** N'y mets jamais un vrai compte rendu, un coffre `.sante`, une phrase secrète, ni une capture où apparaissent ton nom, ta date de naissance ou tes résultats. Une faille de sécurité se signale [en privé](https://github.com/Efix/mon-dossier-sante/security/advisories/new).
+  - type: input
+    id: version
+    attributes:
+      label: Version de l'application
+      description: Affichée en bas de l'écran d'accueil et dans la page Coffre.
+      placeholder: "1.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: usage
+    attributes:
+      label: Utilisation
+      options:
+        - Fichier téléchargé, ouvert depuis l'ordinateur
+        - Version en ligne
+    validations:
+      required: true
+  - type: input
+    id: navigateur
+    attributes:
+      label: Navigateur et système
+      placeholder: "Edge 142 sous Windows 11"
+    validations:
+      required: true
+  - type: textarea
+    id: probleme
+    attributes:
+      label: Ce qui se passe
+      description: Le message affiché, s'il y en a un, recopié mot pour mot.
+    validations:
+      required: true
+  - type: textarea
+    id: attendu
+    attributes:
+      label: Ce que tu attendais
+    validations:
+      required: true
+  - type: textarea
+    id: etapes
+    attributes:
+      label: Étapes pour reproduire
+      description: Si possible avec un coffre créé pour l'occasion et des données inventées.
+      placeholder: |
+        1. Créer un coffre
+        2. Importer un bilan…
+        3. …
+  - type: checkboxes
+    id: donnees
+    attributes:
+      label: Données personnelles
+      options:
+        - label: Ce ticket ne contient aucune donnée de santé ni information personnelle réelle.
+          required: true
