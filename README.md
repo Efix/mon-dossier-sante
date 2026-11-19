@@ -23,6 +23,22 @@ Mon dossier santé est une application gratuite qui fonctionne entièrement dans
 - **Elle ne synchronise rien.** Pas de cloud, pas de partage, pas de sauvegarde automatique ailleurs que sur votre appareil. C'est voulu : rien ne sort de votre ordinateur sans que vous le décidiez.
 - **Elle ne peut pas récupérer une phrase secrète oubliée.** Personne ne le peut, pas même l'auteur de l'application. Voir [Votre phrase secrète](#votre-phrase-secrète).
 
+## Et Mon espace santé, le site de mon laboratoire ?
+
+Mon dossier santé ne les remplace pas : il les complète. Continuez à les utiliser.
+
+- **Mon espace santé** est le carnet de santé numérique officiel. Les professionnels y déposent vos documents, et vous pouvez les partager avec vos soignants. Il les conserve tels quels : il n'en lit pas les résultats et ne montre pas leur évolution.
+- **Le site de votre laboratoire** affiche vos résultats, parfois avec leur évolution. Mais il ne connaît que les analyses faites dans ce laboratoire ou dans son réseau, et les garde le temps qu'il a choisi.
+
+Ce que Mon dossier santé ajoute :
+
+- **Tous vos laboratoires sur une même courbe.** Changer de laboratoire, de ville ou de réseau n'interrompt pas votre suivi.
+- **Tout ce que vous avez, au même endroit.** Bilans de plusieurs laboratoires, anciens comptes rendus, ordonnances, imagerie, mais aussi vos mesures et votre fiche santé, y compris ce qui n'a jamais été déposé en ligne.
+- **Un dossier qui vous appartient.** Un fichier chiffré sur votre disque : ni compte, ni hébergeur, ni durée de conservation imposée. Il reste lisible si un compte en ligne est fermé ou si un service change.
+- **Sans connexion.** Vous le consultez partout, même sans réseau.
+
+En contrepartie, rien n'y arrive tout seul : c'est vous qui ajoutez les documents et qui gardez les sauvegardes. L'application ne se connecte ni à Mon espace santé ni au site de votre laboratoire. Téléchargez-y le PDF d'un bilan, puis importez-le ici.
+
 ## Démarrer
 
 1. **Téléchargez l'application** depuis [le site](https://efix.github.io/mon-dossier-sante/). C'est un seul fichier, `Mon-Dossier-Sante-vX.Y.Z.html`, de quelques mégaoctets. Rien à installer.
