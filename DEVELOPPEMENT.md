@@ -4,7 +4,7 @@ Ce document décrit le code de Mon dossier santé pour qui veut le lire ou le v�
 
 Prérequis : Node 22 ou plus récent, et git. Le projet n'a aucune dépendance à installer.
 
-Sur un nouveau clone, activez le crochet qui vérifie chaque commit :
+Sur un nouveau clone, activez le hook qui vérifie chaque commit :
 
 ```bash
 git config core.hooksPath .githooks
