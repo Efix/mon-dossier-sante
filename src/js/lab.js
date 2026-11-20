@@ -56,6 +56,7 @@
     ['fib4', 'FIB-4', 'Calcul du FIB-4|Score FIB-4'],
     ['b9', 'Folates (vitamine B9)', 'Folates|Vitamine B9|Ácido fólico|Folato sérico|Folato'],
     ['b12', 'Vitamine B12', 'Vitamina B12|Cobalamina|Cobalamine'],
+    ['vitc', 'Vitamine C', 'Vitamine C (ascorbate)|Ascorbate|Acide ascorbique|Vitamina C|Ácido ascórbico'],
     ['d25', 'Vitamine D (25-OH)', '25 OH vitamine D|25 OH vitamina D|Vitamina D 25 OH|25 hidroxivitamina D|25 hydroxyvitamine D|Vitamine D totale (D2+D3)'],
     ['testosterone', 'Testostérone totale', 'Testostérone|Testostérone sérique|Testosterona|Testosterona total|Testosterona total sérica'],
     ['testosterone-free', 'Testostérone libre', 'Testosterona livre'],
@@ -87,7 +88,7 @@
     for (const alt of [name, ...alternatives.split('|')]) aliases.set(fold(alt), key)
   }
   const labelText = value => clean(value)
-    .replace(/^[\s✔✓•*▪¤▫]+|[\s:.*·…]+$/gu, '').replace(/\s+/g, ' ')
+    .replace(/^[\s✔✓•*▪¤▫]+|[\s:.*·…#]+$/gu, '').replace(/\s+/g, ' ')
   const keyFor = name => aliases.get(fold(name)) ?? ''
   const groupFor = name => keyFor(name) || 'libre:' + fold(name)
   const nameFor = (key, name) => names.get(key) ?? name
@@ -179,7 +180,8 @@
   const shortText = text => text.length > 240 ? text.match(textResult)?.[0] ?? text.slice(0, 240) : text
 
   function referenceFR(tail) {
-    const [part] = tail.trimStart().split(/\t| {2,}/)
+    // « N : 4,6-14,9 mg/l » : valeurs normales des comptes rendus du laboratoire spécialisé Cerba.
+    const part = tail.trimStart().split(/\t| {2,}/)[0]?.replace(/^N\s*:\s*/, '')
     if (!part || part.length > 100 || /^\d{2}[/.-]\d{2}[/.-]/.test(part)) return ''
     const range = /\d\s*(?:à|[-–])\s*\d/.test(part)
     const explicitBound = /^(?:\(\s*[<>≤≥]=?\s*(?:à\s*)?\d.*\)|[<>≤≥]=?\s*à\s*\d.*)$/i.test(part)
@@ -200,7 +202,7 @@
     const rows = []
     const dates = new Set()
     const unknown = new Map()
-    const secondUnits = new Set(['creatinine','fasting','glucose','cholesterol','hdl','ldl','nonhdl','triglycerides','b9','b12','ft4','d25','testosterone'])
+    const secondUnits = new Set(['creatinine','fasting','glucose','cholesterol','hdl','ldl','nonhdl','triglycerides','b9','b12','vitc','ft4','d25','testosterone'])
     // Une section d'urines peut se poursuivre sur la page suivante : l'état survit au saut de page.
     let urine = false
     let urineSkipped = 0
@@ -230,7 +232,8 @@
           continue
         }
         const label = first ? labelText(line.slice(0, first.start)) : labelText(line.split(/\t| {2,}/)[0])
-        if (!keyFor(label) && first?.start && awaiting && index - awaiting.index <= 3 && methodLine.test(fold(label))) {
+        // Valeur sur la ligne de méthode, ou seule en début de ligne après « Technique » et « Prélèvement » (Cerba).
+        if (!keyFor(label) && first && awaiting && index - awaiting.index <= 3 && (first.start ? methodLine.test(fold(label)) : !label)) {
           const candidate = row(awaiting.label, first, page, referenceFR(line.slice(first.end)))
           rows.push(candidate)
           previous = candidate
@@ -257,7 +260,9 @@
           const cell = line.split(/\t| {2,}/)[1]?.trim()
           if (cell && numberCell.test(cell)) rows.push(row(label, {value:cell, unit:''}, page))
         } else {
+          // Une nouvelle analyse commence : la ligne suivante ne peut plus être la seconde unité de la précédente.
           awaiting = {label, index}
+          previous = null
         }
       }
     }

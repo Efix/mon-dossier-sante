@@ -191,6 +191,32 @@ test('ligne de méthode : la valeur revient à l’analyse nommée juste au-dess
   assert.deepEqual(lignes(deja), [['Plaquettes', '250', 'G/L', '', '', 1]], 'une analyse qui a déjà sa valeur n’en reçoit pas une seconde')
 })
 
+test('compte rendu Cerba sous-traité : valeurs sous la technique et le prélèvement, deux unités', () => {
+  const bilan = lire([
+    'Cerballiance', 'Prélevé le 12/03/2026', 'Ferritine\t80 µg/L\t(10 à 200)',
+    '\f',
+    'Exemplaire patient',
+    'VITAMINE C (ASCORBATE) #',
+    'Technique : HPLC',
+    'Prélèvement : 12.03.2026 Plasma\t08h 10',
+    '40,0 μmol/l\tN : 26,1-84.6 μmol/l\t(01.01.26 : 30,0)',
+    '7,0 mg/l\tN : 4,6-14,9 mg/l\t(01.01.26 : 5,3)',
+    'Concentration satisfaisante en vitamine C.',
+  ])
+  assert.deepEqual(lignes(bilan), [
+    ['Ferritine', '80', 'µg/L', '(10 à 200)', '', 1],
+    ['VITAMINE C (ASCORBATE)', '40,0', 'μmol/l', '26,1-84.6 μmol/l', '', 2],
+    ['VITAMINE C (ASCORBATE)', '7,0', 'mg/l', '4,6-14,9 mg/l', '', 2],
+  ])
+  assert.equal(Lab.groupFor('VITAMINE C (ASCORBATE)'), 'vitc')
+  assert.equal(Lab.judge('7,0', 'cerballiance', 'mg/l', '4,6-14,9 mg/l'), 'in')
+  assert.equal(Lab.judge('20,0', 'cerballiance', 'μmol/l', '26,1-84.6 μmol/l'), 'low')
+
+  const suite = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'Créatinine\t80 µmol/L', 'VITAMINE C', '7,0 mg/l'])
+  assert.deepEqual(lignes(suite), [['Créatinine', '80', 'µmol/L', '', '', 1], ['VITAMINE C', '7,0', 'mg/l', '', '', 1]],
+    'la valeur qui suit une nouvelle analyse ne devient pas la seconde unité de la précédente')
+})
+
 test('lignes non reconnues : signalées au lieu de disparaître', () => {
   const fr = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'Hémoglobine\t14,5 g/dL\t13,0 à 17,0', 'PSA total\t1,2 ng/mL\t< 4', 'Créatinine (enzymatique)\t80 µmol/L', 'soit\t9,0 mg/L'])
   assert.equal(fr.rows.length, 1)
