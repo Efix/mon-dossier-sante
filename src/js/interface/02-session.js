@@ -248,6 +248,7 @@
       urls = new Set()
       session = null
       pendingOpen = null
+      rereading = null
       metric = unit = ''
       showAccess()
     } catch (error) {

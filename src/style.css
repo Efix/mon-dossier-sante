@@ -292,6 +292,10 @@ dialog::backdrop { background: #0d201fb3; }
   border-radius: 9px;
   background: #fbfcfa;
 }
+.reread-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.reread-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.result-row.result-new { border-color: var(--teal); background: #f1f8f3; }
+.new-pill { background: var(--teal); color: #fff; }
 .result-row .row-tail { grid-column: 1 / -1; padding: 2px 0 0; display: flex; align-items: center; gap: 6px 12px; flex-wrap: wrap; }
 .row-ref input, .result-row input { min-width: 0; }
 .result-row .row-remove { align-self: end; }

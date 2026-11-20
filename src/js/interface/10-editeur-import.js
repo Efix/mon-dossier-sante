@@ -49,7 +49,8 @@
     notice('report-message')
   }
 
-  function openEditor(kind, existing = null) {
+  // `additions` : résultats trouvés par « Relire les bilans », ajoutés aux lignes existantes pour vérification.
+  function openEditor(kind, existing = null, additions = null) {
     if (busy || !session) return
     clearEditor()
     const form = Dossier.forms[kind]
@@ -67,6 +68,10 @@
     $('confirm-results').hidden = true
     for (const item of existing?.results ?? []) addResult(item)
     syncEditorKind(existing?.fields)
+    if (additions) {
+      if (existing?.lab === 'other' && additions.lab !== 'other') $('doc-lab').value = additions.lab
+      showAdditions(additions.rows, additions.omissions ?? '')
+    }
     $('editor').showModal()
   }
   $('editor').addEventListener('cancel', event => {
@@ -181,16 +186,46 @@
     if (file) void importAttachment(file)
   })
 
-  function acceptProposals({lab, date, rows, multipleDates, unknown = [], urineSkipped = 0, unnamed = 0}) {
-    if ($('doc-lab').value === 'auto') $('doc-lab').value = lab
-    if (!$('doc-title').value || $('doc-title').value === 'Bilan biologique') $('doc-title').value = titleFor(lab)
-    if (date && !$('doc-date').value) $('doc-date').value = date
+  // Ce que la lecture a laissé de côté, à compléter à la main si besoin.
+  function omissionsOf({unknown = [], urineSkipped = 0, unnamed = 0}) {
     const ignored = []
     if (unknown.length) ignored.push(unknown.length + ' ligne(s) avec une valeur mais sans analyse reconnue : ' +
       unknown.slice(0, 12).join(', ') + (unknown.length > 12 ? '…' : '') + '.')
     if (unnamed) ignored.push(unnamed + ' résultat(s) dont l’analyse n’a pas été identifiée.')
     if (urineSkipped) ignored.push(urineSkipped + ' ligne(s) d’analyse d’urine laissée(s) de côté.')
-    const omissions = ignored.length ? ' Non repris, à ajouter à la main si besoin : ' + ignored.join(' ') : ''
+    return ignored.length ? ' Non repris, à ajouter à la main si besoin : ' + ignored.join(' ') : ''
+  }
+
+  // Nouvelle lecture d'un bilan qui a déjà des lignes : elles restent telles quelles, corrections comprises ;
+  // seuls les résultats absents s'ajoutent, marqués « Nouveau », et la vérification est de nouveau demandée.
+  function showAdditions(rows, omissions) {
+    const added = rows.slice(0, Math.max(0, 1000 - $('result-editor').children.length))
+    for (const item of added) addResult(item, true)
+    if (!added.length) {
+      notice('import-message', 'Aucun nouveau résultat dans ce PDF : les lignes actuelles sont conservées.' + omissions, omissions ? 'warn' : '')
+      return
+    }
+    draft.proposed = true
+    draft.changed = true
+    $('confirm-results').hidden = false
+    $('checked-results').checked = false
+    notice('import-message', added.length + ' nouveau(x) résultat(s), marqué(s) « Nouveau » en fin de liste. Les lignes déjà présentes et vos corrections ' +
+      'sont conservées. Vérifiez les nouvelles lignes avec l’original.' + omissions, 'warn')
+    $('result-editor').querySelector('.result-new')?.scrollIntoView({block:'nearest'})
+  }
+
+  function mergeProposals(proposed) {
+    const current = Array.from($('result-editor').children, entry =>
+      Object.fromEntries(Array.from(entry.querySelectorAll('[data-field]'), input => [input.dataset.field, input.value.trim()])))
+    if ($('doc-lab').value === 'other' && proposed.lab !== 'other') $('doc-lab').value = proposed.lab
+    showAdditions(Lab.missing(current, proposed.rows), omissionsOf(proposed))
+  }
+
+  function acceptProposals({lab, date, rows, multipleDates, unknown = [], urineSkipped = 0, unnamed = 0}) {
+    if ($('doc-lab').value === 'auto') $('doc-lab').value = lab
+    if (!$('doc-title').value || $('doc-title').value === 'Bilan biologique') $('doc-title').value = titleFor(lab)
+    if (date && !$('doc-date').value) $('doc-date').value = date
+    const omissions = omissionsOf({unknown, urineSkipped, unnamed})
     if (!rows.length) {
       notice('import-message', 'Aucun résultat reconnu. Vous pouvez joindre l’original et saisir les valeurs à la main.' + omissions, 'warn')
       return
@@ -246,6 +281,8 @@
           $('doc-kind').value = report.kind
           syncEditorKind()
           acceptReport(report, true, 'Ce PDF n’est pas un bilan de laboratoire : classé en « ' + Coffre.types[report.kind] + ' ». ')
+        } else if ($('result-editor').children.length) {
+          mergeProposals(proposed)
         } else {
           acceptProposals(proposed)
         }
@@ -298,8 +335,6 @@
 
   async function reread() {
     if (!draft?.file || draft.loading || !Coffre.isPDF(draft.file.bytes)) return
-    const biology = $('doc-kind').value === 'bio'
-    if (biology && $('result-editor').children.length && !confirm('Relire le PDF et remplacer les lignes proposées si des résultats sont trouvés ?')) return
     const active = draft
     active.loading = true
     updateAttachmentUI()
@@ -318,8 +353,8 @@
     acceptProposals(Lab.parse(Lab.pagesFromText($('paste-text').value), $('doc-lab').value))
   })
 
-  function addResult(item = {}) {
-    const row = el('div', 'result-row')
+  function addResult(item = {}, fresh = false) {
+    const row = el('div', fresh ? 'result-row result-new' : 'result-row')
     row.dataset.id = item.id || crypto.randomUUID()
     row.dataset.page = String(item.page || 0)
     const field = (key, label, limit, text, css = '') => {
@@ -339,6 +374,7 @@
       if (!$('result-editor').children.length) $('confirm-results').hidden = true
     }, 'text-button danger compact row-remove')
     const tail = el('div', 'row-tail')
+    if (fresh) tail.append(el('span', 'pill new-pill', 'Nouveau'))
     if (item.page) tail.append(el('span', 'muted small', 'Page ' + item.page))
     const date = el('input', 'row-date')
     date.dataset.field = 'date'

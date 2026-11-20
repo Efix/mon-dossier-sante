@@ -212,15 +212,108 @@ test('compte rendu Cerba sous-traité : valeurs sous la technique et le prélèv
   assert.equal(Lab.judge('7,0', 'cerballiance', 'mg/l', '4,6-14,9 mg/l'), 'in')
   assert.equal(Lab.judge('20,0', 'cerballiance', 'μmol/l', '26,1-84.6 μmol/l'), 'low')
 
+  const cerba = lire([
+    'Cerballiance', 'Prélevé le 12/03/2026', '\f',
+    'ZINC (Absorption atomique) #', 'Prélèvement : 12.03.2026 Sérum\t08h 10',
+    '15,0 μmol/l\tN: 11,0 à 24,0', '0,98 mg/l\tN: 0,72 à 1,57',
+    'Concentration en zinc sérique satisfaisante.',
+    'VITAMINE E (ALPHA-TOCOPHEROL) (RF-MSMS)', 'Prélèvement : 12.03.2026 Sérum\t08h 10', '30,0 μmol/l\tN : 19 à 39 μmol/l',
+    'Prélèvement : 12.03.2026 Plasma citraté congelé\t08h 10',
+    'DOSAGE FONCTIONNEL DE LA PROTEINE S (chronométrique) #', 'STA Staclot®',
+    'Risque de surestimation de la Protéine S si traitement par anticoagulant',
+    'oral direct.', '80 %\tN > 49',
+    'AUTO-ANTICORPS ANTI-NUCLEAIRES (I.F.I.) #', '< 160', 'Recherche négative.',
+  ])
+  assert.deepEqual(lignes(cerba), [
+    ['ZINC (Absorption atomique)', '15,0', 'μmol/l', '11,0 à 24,0', '', 2],
+    ['ZINC (Absorption atomique)', '0,98', 'mg/l', '0,72 à 1,57', '', 2],
+    ['VITAMINE E (ALPHA-TOCOPHEROL) (RF-MSMS)', '30,0', 'μmol/l', '19 à 39 μmol/l', '', 2],
+    ['DOSAGE FONCTIONNEL DE LA PROTEINE S (chronométrique)', '80', '%', '> 49', '', 2],
+  ], 'technique entre parenthèses, valeurs normales sans unité, « N: » collé et « N > 49 »')
+  assert.deepEqual(cerba.rows.map(item => Lab.groupFor(item.name)), ['zinc', 'zinc', 'vite', 'protein-s'])
+  assert.equal(Lab.judge('80', 'cerballiance', '%', '> 49'), 'in')
+
   const suite = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'Créatinine\t80 µmol/L', 'VITAMINE C', '7,0 mg/l'])
   assert.deepEqual(lignes(suite), [['Créatinine', '80', 'µmol/L', '', '', 1], ['VITAMINE C', '7,0', 'mg/l', '', '', 1]],
     'la valeur qui suit une nouvelle analyse ne devient pas la seconde unité de la précédente')
 })
 
+test('bilan Cerballiance détaillé : hémostase, fer, électrophorèse, hormones, légendes', () => {
+  const bilan = lire([
+    'Cerballiance', 'Prélévé le 12/03/26 à 08H10',
+    'HÉMOSTASE',
+    '✔\tTAUX DE PROTHROMBINE', '(1)(Tech.chronométrique STAGO STA°- NeoPTimal)',
+    'Temps Quick patient\t12,0 sec', 'Taux de prothrombine\t95 %\t70 à 120', 'INR\t1,1',
+    'Ratio patient/témoin\t1,05\t< 1,20',
+    'BIOCHIMIE DU SANG',
+    '✔ PROTIDES TOTAUX\t70 g/L\t(66 à 83)',
+    '✔\tCALCUL DU FIB-4\t1,10', '1,05',
+    '✔ COEFFICIENT DE SATURATION EN FER DE LA TRANSFERRINE (CS-Tf)',
+    'FER\t15,0 μmol/L\t(10.7 à 32.2)', '(1) (Tech. colorimétrique TPTZ)', '84 μg/dL\t(60 à 180)',
+    'Coefficient de saturation (CS-Tf)\t25 %\t(20 à 45)',
+    '✔\tCALCIUM CORRIGE (albumine)\t2,40 mmol/L\t(2.20 à 2.65)', '(Obtenu par calcul à partir du taux d’albumine sérique)', '96 mg/L\t(88 à 106)',
+    'Albumine\t60,0 %\t(55.8 à 66.1)\tsoit\t42,0 g/L\t(40.2 à 47.6)',
+    'Rapport Albumine / Globulines\t1,50\t(1.20 à 2.00)',
+    '✔ HEMOGLOBINE GLYQUEE - (HbA1c)\t5,4 %\t(4.0 à 6.0)', '(1) (Chromatopgraphie HPLC)\t35 mmol/mol\t(20 à 42)',
+    'HbA1c < 5.7 %: Risque faible de diabète\tDiabète type 1\tHbA1c < à 7.5 %: Diabète équilibré',
+    'Diabète type2\tHbA1c > à 7.0 %: Diabète non équilibré sauf',
+    'HORMONOLOGIE',
+    '✔ PROLACTINE\t300,0 mUI/L\t(109,2 à 556,7)', '(1) Chimiluminescence - Seuil de détection : 12,6 mUI/L', '14,2 ng/mL\t(5,2 à 26,5)',
+    '✔\tFSH\t5,0 UI/L\t(cf tableau)', '(1) (Chimiluminescence - Seuil de détection : 0,05 UI/L)',
+    '✔ Index HOMA d\'insulinorésistance\t1,5',
+  ])
+  assert.deepEqual(lignes(bilan), [
+    ['Taux de prothrombine', '95', '%', '70 à 120', '', 1],
+    ['INR', '1,1', '', '', '', 1],
+    ['Ratio patient/témoin', '1,05', '', '', '', 1],
+    ['PROTIDES TOTAUX', '70', 'g/L', '(66 à 83)', '', 1],
+    ['CALCUL DU FIB-4', '1,10', '', '', '', 1],
+    ['FER', '15,0', 'μmol/L', '(10.7 à 32.2)', '', 1],
+    ['FER', '84', 'μg/dL', '(60 à 180)', '', 1],
+    ['Coefficient de saturation (CS-Tf)', '25', '%', '(20 à 45)', '', 1],
+    ['CALCIUM CORRIGE (albumine)', '2,40', 'mmol/L', '(2.20 à 2.65)', '', 1],
+    ['CALCIUM CORRIGE (albumine)', '96', 'mg/L', '(88 à 106)', '', 1],
+    ['Albumine', '60,0', '%', '(55.8 à 66.1)', '', 1],
+    ['Albumine', '42,0', 'g/L', '(40.2 à 47.6)', '', 1],
+    ['Rapport Albumine / Globulines', '1,50', '', '(1.20 à 2.00)', '', 1],
+    ['HEMOGLOBINE GLYQUEE - (HbA1c)', '5,4', '%', '(4.0 à 6.0)', '', 1],
+    ['HEMOGLOBINE GLYQUEE - (HbA1c)', '35', 'mmol/mol', '(20 à 42)', '', 1],
+    ['PROLACTINE', '300,0', 'mUI/L', '(109,2 à 556,7)', '', 1],
+    ['PROLACTINE', '14,2', 'ng/mL', '(5,2 à 26,5)', '', 1],
+    ['FSH', '5,0', 'UI/L', '', '', 1],
+    ['Index HOMA d\'insulinorésistance', '1,5', '', '', '', 1],
+  ])
+  assert.deepEqual(bilan.unknown, [], 'légendes et seuils de détection ne sont ni des résultats ni des lignes inconnues')
+  assert.deepEqual(bilan.rows.map(item => Lab.groupFor(item.name)), ['pt', 'inr', 'aptt', 'protein', 'fib4', 'iron', 'iron', 'tsat',
+    'calcium-corrected', 'calcium-corrected', 'albumin', 'albumin', 'ag-ratio', 'a1c', 'a1c', 'prolactin', 'prolactin', 'fsh', 'homa'])
+})
+
+test('nouvelle lecture : seuls les résultats absents sont proposés, corrections conservées', () => {
+  const enregistres = [
+    {name:'Ferritine', value:'80', unit:'µg/L', date:''},
+    {name:'Glycémie à jeun (corrigée à la main)', value:'0,90', unit:'g/L', date:''},
+    {name:'Glycémie à jeun', value:'5,0', unit:'mmol/L', date:''},
+  ]
+  const relus = [
+    {name:'FERRITINE', value:'81', unit:'μg/L', date:''},
+    {name:'GLYCEMIE A JEUN', value:'5,0', unit:'mmol/L', date:''},
+    {name:'VITAMINE C (ASCORBATE)', value:'40,0', unit:'μmol/l', date:''},
+    {name:'VITAMINE C (ASCORBATE)', value:'7,0', unit:'mg/l', date:''},
+    {name:'Sodium', value:'140', unit:'mmol/L', date:'2026-03-10'},
+    {name:'Sodium', value:'141', unit:'mmol/L', date:'2026-03-12'},
+  ]
+  assert.deepEqual(Lab.missing([...enregistres, {name:'Sodium', value:'140', unit:'mmol/L', date:'2026-03-10'}], relus).map(item => item.value),
+    ['40,0', '7,0', '141'], 'même analyse, même unité et même date : déjà présente, même avec une valeur corrigée')
+  assert.equal(Lab.missing(enregistres, relus).filter(item => item.name === 'Sodium').length, 2, 'deux dates, deux résultats')
+  assert.deepEqual(Lab.missing(relus, relus), [], 'une seconde lecture n’ajoute rien')
+  assert.deepEqual(Lab.missing([{name:'Sodium', unit:'mmol/L', date:''}], [{name:'Sodium', unit:'mmol/L', date:''}, {name:'Sodium', unit:'mmol/L', date:''}]).length, 1,
+    'une analyse présente deux fois dans le PDF et une fois dans le bilan : une seule ligne proposée')
+})
+
 test('lignes non reconnues : signalées au lieu de disparaître', () => {
-  const fr = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'Hémoglobine\t14,5 g/dL\t13,0 à 17,0', 'PSA total\t1,2 ng/mL\t< 4', 'Créatinine (enzymatique)\t80 µmol/L', 'soit\t9,0 mg/L'])
+  const fr = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'Hémoglobine\t14,5 g/dL\t13,0 à 17,0', 'PSA total\t1,2 ng/mL\t< 4', 'Cystatine C (néphélométrie)\t0,9 mg/L', 'soit\t9,0 mg/L'])
   assert.equal(fr.rows.length, 1)
-  assert.deepEqual(fr.unknown, ['PSA total', 'Créatinine (enzymatique)'])
+  assert.deepEqual(fr.unknown, ['PSA total', 'Cystatine C (néphélométrie)'])
 
   const br = lire(['CHECK UP LABORATORIO', 'PSA TOTAL', 'Resultado: 1,2 ng/mL', 'Data da coleta: 05/02/2026', 'Bastonetes 2 % 80 /mm³'])
   assert.equal(br.rows.length, 0)

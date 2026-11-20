@@ -5,7 +5,8 @@
     ['ferritin', 'Ferritine', 'Ferritina|Ferritine sérique|Ferritina sérica'],
     ['iron', 'Fer sérique', 'Ferro|Ferro sérico|Ferro no soro|Fer|Dosagem de ferro'],
     ['transferrin', 'Transferrine', 'Transferrina'],
-    ['tsat', 'Saturation de la transferrine', 'Coefficient de saturation de la transferrine|Saturação da transferrina|Índice de saturação da transferrina'],
+    ['tsat', 'Saturation de la transferrine', 'Coefficient de saturation de la transferrine|Saturação da transferrina|Índice de saturação da transferrina|' +
+      'Coefficient de saturation|Coefficient de saturation en fer de la transferrine|CS-Tf'],
     ['rbc', 'Hématies', 'Hemácias|Eritrócitos|Globules rouges'],
     ['hemoglobin', 'Hémoglobine', 'Hemoglobina|Hb'],
     ['hematocrit', 'Hématocrite', 'Hematócrito|Ht'],
@@ -22,6 +23,9 @@
     ['ig', 'Granulocytes immatures', 'Granulócitos imaturos'],
     ['platelets', 'Plaquettes', 'Plaquetas|Contagem de plaquetas'],
     ['mpv', 'Volume plaquettaire moyen', 'VPM|Volume plaquetário médio'],
+    ['pt', 'Taux de prothrombine (TP)', 'Taux de prothrombine|TP|Tempo de protrombina (atividade)'],
+    ['inr', 'INR', 'International normalized ratio'],
+    ['aptt', 'TCA (ratio patient/témoin)', 'Ratio patient/témoin|TCA ratio|Ratio TCA'],
     ['crp', 'CRP', 'Proteína C reativa|Protéine C réactive|Protéine C réactive (CRP)|Proteína C reativa (PCR)|PCR'],
     ['creatinine', 'Créatinine', 'Creatinina|Créatinine sérique|Creatinina sérica|Dosagem de creatinina'],
     ['egfr', 'DFG (CKD-EPI)', 'DFG CKD-EPI|DFG calculé selon la formule CKD-EPI|DFG selon CKD-EPI|DFG CKD-EPI 2021|DFG calculé selon CKD-EPI|DFG calculé selon CKD-EPI 2021'],
@@ -36,8 +40,11 @@
     ['potassium', 'Potassium', 'Potássio|Potassium sérique|Potássio sérico|K'],
     ['chloride', 'Chlorures', 'Cloro|Cloreto|Cloreto sérico|Chlore|Chlorures sériques'],
     ['calcium', 'Calcium total', 'Cálcio total|Calcium|Calcémie|Cálcio sérico'],
+    ['calcium-corrected', 'Calcium corrigé', 'Calcium corrigé (albumine)|Calcémie corrigée|Cálcio corrigido'],
     ['magnesium', 'Magnésium', 'Magnésio|Magnésium sérique'],
     ['zinc', 'Zinc', 'Zinco|Zinc sérique|Zinco sérico'],
+    ['copper', 'Cuivre', 'Cuivre sérique|Cobre|Cobre sérico'],
+    ['selenium', 'Sélénium', 'Selênio|Sélénium sérique'],
     ['phosphate', 'Phosphore', 'Fósforo|Phosphatémie|Phosphates inorganiques'],
     ['fasting', 'Glycémie à jeun', 'Glicemia em jejum|Glicose em jejum|Glicemia de jejum|Glucose à jeun'],
     ['glucose', 'Glucose sanguin', 'Glicose sanguínea|Glicose|Glicemia|Glycémie|Glucose'],
@@ -52,12 +59,36 @@
     ['ggt', 'Gamma-GT', 'GGT|Gama GT|Gama glutamil transferase|Gamma glutamyl transferase (GGT)'],
     ['alp', 'Phosphatases alcalines', 'Fosfatase alcalina|Phosphatase alcaline|PAL'],
     ['bili', 'Bilirubine totale', 'Bilirrubina total'],
+    ['protein', 'Protides totaux', 'Protéines totales|Protides totaux sériques|Protéines sériques totales|Proteínas totais'],
     ['albumin', 'Albumine sanguine', 'Albumine|Albumine sérique|Albumina|Albumina sérica'],
+    ['alpha1', 'Alpha-1 globulines', 'Alpha 1 globulines|Alfa 1 globulinas'],
+    ['alpha2', 'Alpha-2 globulines', 'Alpha 2 globulines|Alfa 2 globulinas'],
+    ['beta1', 'Bêta-1 globulines', 'Beta 1 globulines|Beta 1 globulinas'],
+    ['beta2', 'Bêta-2 globulines', 'Beta 2 globulines|Beta 2 globulinas'],
+    ['gamma', 'Gammaglobulines', 'Gamma globulines|Gama globulinas'],
+    ['ag-ratio', 'Rapport albumine/globulines', 'Rapport A/G|Relação albumina/globulina'],
+    ['iga', 'Immunoglobulines A (IgA)', 'Immunoglobuline A|Immunoglobulines A|IgA|Imunoglobulina A'],
     ['fib4', 'FIB-4', 'Calcul du FIB-4|Score FIB-4'],
     ['b9', 'Folates (vitamine B9)', 'Folates|Vitamine B9|Ácido fólico|Folato sérico|Folato'],
     ['b12', 'Vitamine B12', 'Vitamina B12|Cobalamina|Cobalamine'],
+    ['vita', 'Vitamine A (rétinol)', 'Vitamine A|Rétinol|Vitamina A|Retinol'],
+    ['b6', 'Vitamine B6', 'Vitamine B6 (pyridoxal 5 phosphate)|Pyridoxal 5 phosphate|Pyridoxal phosphate|Vitamina B6'],
     ['vitc', 'Vitamine C', 'Vitamine C (ascorbate)|Ascorbate|Acide ascorbique|Vitamina C|Ácido ascórbico'],
-    ['d25', 'Vitamine D (25-OH)', '25 OH vitamine D|25 OH vitamina D|Vitamina D 25 OH|25 hidroxivitamina D|25 hydroxyvitamine D|Vitamine D totale (D2+D3)'],
+    ['vite', 'Vitamine E (alpha-tocophérol)', 'Vitamine E|Alpha-tocophérol|Vitamina E|Alfa-tocoferol'],
+    ['d25', 'Vitamine D (25-OH)', '25 OH vitamine D|25 OH vitamina D|Vitamina D 25 OH|25 hidroxivitamina D|25 hydroxyvitamine D|Vitamine D totale (D2+D3)|' +
+      'Vitamine D2/D3 (25-OH vit D)|Vitamine D2/D3|Vitamine D (25-OH)'],
+    ['insulin', 'Insuline à jeun', 'Insuline|Insulina|Insulina em jejum|Insulinémie à jeun'],
+    ['homa', 'Index HOMA (insulinorésistance)', 'Index HOMA d’insulinorésistance|Index HOMA|HOMA-IR|Indice HOMA'],
+    ['prolactin', 'Prolactine', 'Prolactina'],
+    ['estradiol', 'Estradiol', 'Œstradiol|Oestradiol|Estradiol (E2)'],
+    ['fsh', 'FSH', 'Hormone folliculostimulante|Hormônio folículo estimulante'],
+    ['lh', 'LH', 'Hormone lutéinisante|Hormônio luteinizante'],
+    ['cortisol', 'Cortisol', 'Cortisol (matin)|Cortisol du matin|Cortisol sérique|Cortisolémie'],
+    ['dhea', 'DHEA', 'Déhydroépiandrostérone|Dehydroepiandrosterone (D.H.E.A.)|D.H.E.A.'],
+    ['protein-c', 'Protéine C (activité)', 'Dosage fonctionnel de la protéine C|Protéine C activité fonctionnelle|Activité de la protéine C'],
+    ['protein-s', 'Protéine S (activité)', 'Dosage fonctionnel de la protéine S|Protéine S activité fonctionnelle|Activité de la protéine S'],
+    ['ttg-iga', 'Anticorps anti-transglutaminase IgA', 'Ac anti-transglutaminase tissulaire IgA|Anticorps anti-transglutaminase tissulaire IgA|' +
+      'Anti-transglutaminase IgA|Ac anti-transglutaminase IgA'],
     ['testosterone', 'Testostérone totale', 'Testostérone|Testostérone sérique|Testosterona|Testosterona total|Testosterona total sérica'],
     ['testosterone-free', 'Testostérone libre', 'Testosterona livre'],
     ['testosterone-bio', 'Testostérone biodisponible', 'Testosterona biodisponível'],
@@ -89,7 +120,9 @@
   }
   const labelText = value => clean(value)
     .replace(/^[\s✔✓•*▪¤▫]+|[\s:.*·…#]+$/gu, '').replace(/\s+/g, ' ')
-  const keyFor = name => aliases.get(fold(name)) ?? ''
+  // « ZINC (Absorption atomique) », « VITAMINE E (ALPHA-TOCOPHEROL) (RF-MSMS) » : sans nom connu tel quel,
+  // le libellé est essayé sans ses parenthèses finales, qui donnent souvent la technique.
+  const keyFor = name => aliases.get(fold(name)) ?? aliases.get(fold(String(name ?? '').replace(/(?:\s*\([^()]*\))+\s*$/, ''))) ?? ''
   const groupFor = name => keyFor(name) || 'libre:' + fold(name)
   const nameFor = (key, name) => names.get(key) ?? name
   const number = String.raw`(?:[<>≤≥]=?[ ]*)?[−+-]?(?:\d{1,3}(?:[ .,'\u00a0\u202f]\d{3}){1,3}(?:[.,]\d+)?|\d+(?:[.,]\d+)?)`
@@ -100,6 +133,7 @@
     '(?:[kKmµμu]?mol|nmol|pmol|[mcdnp]g|' + micro + 'g|[GgT]|mmol)\\s*/\\s*(?:mL|dL|L)',
     '(?:10\\s*[\\^³⁶63]?\\s*[36]?|milh(?:ões|oes)|mil|c[eé]lulas?|cel|cél)?\\s*/\\s*(?:mm[³3]|[µμu]L|mL)',
     'm?Eq\\s*/\\s*(?:mL|dL|L)',
+    'mmol\\s*/\\s*mol',
     'mm\\s*/\\s*(?:1\\s*)?h(?:ora|eure)?',
     'fL|pg|%|segundos?|s',
     'mm',
@@ -180,16 +214,20 @@
   const shortText = text => text.length > 240 ? text.match(textResult)?.[0] ?? text.slice(0, 240) : text
 
   function referenceFR(tail) {
-    // « N : 4,6-14,9 mg/l » : valeurs normales des comptes rendus du laboratoire spécialisé Cerba.
-    const part = tail.trimStart().split(/\t| {2,}/)[0]?.replace(/^N\s*:\s*/, '')
+    // « N : 4,6-14,9 mg/l », « N > 49 » : valeurs normales des comptes rendus du laboratoire spécialisé Cerba.
+    // Ailleurs, une borne seule sans « à » (« < 3 ») peut être un résultat antérieur : elle n'est pas reprise.
+    const normal = /^N\s*(?::|(?=[<>≤≥]))\s*/
+    const cell = tail.trimStart().split(/\t| {2,}/)[0] ?? ''
+    const part = cell.replace(normal, '')
     if (!part || part.length > 100 || /^\d{2}[/.-]\d{2}[/.-]/.test(part)) return ''
     const range = /\d\s*(?:à|[-–])\s*\d/.test(part)
-    const explicitBound = /^(?:\(\s*[<>≤≥]=?\s*(?:à\s*)?\d.*\)|[<>≤≥]=?\s*à\s*\d.*)$/i.test(part)
+    const explicitBound = /^(?:\(\s*[<>≤≥]=?\s*(?:à\s*)?\d.*\)|[<>≤≥]=?\s*à\s*\d.*)$/i.test(part) ||
+      (normal.test(cell) && /^[<>≤≥]=?\s*\d/.test(part))
     return range || explicitBound ? part.trim() : ''
   }
 
   // Lignes « libellé + valeur » dont le libellé est inconnu : signalées à l'import au lieu de disparaître.
-  const notAName = /^(?:soit|ou|et|valeurs?|valor(?:es)?|referenc|risque|risco|objectif|cible|seuil|normal|interpretation|resultado|adult|homens|mulheres|crianca|desejavel|otimo|limitrofe|alto|baixo|ate|acima|inferior|superior|si|pour|en|de|un|une|le|la|les|des|du|au|aux|chez|dans|avec|sans|selon|ce|cet|cette|il|elle|on|nous|vous)(?: |$)/
+  const notAName = /^(?:soit|ou|et|valeurs?|valor(?:es)?|referenc|risque|risco|objectif|cible|seuil|normales?|interpretation|resultado|adult|homens|mulheres|crianca|desejavel|otimo|limitrofe|alto|baixo|ate|acima|inferior|superior|si|pour|en|de|un|une|le|la|les|des|du|au|aux|chez|dans|avec|sans|selon|ce|cet|cette|il|elle|on|nous|vous)(?: |$)/
   const noteUnknown = (unknown, label) => {
     const key = fold(label)
     if (label.length <= 80 && /\p{L}{3}/u.test(label) && !notAName.test(key) && unknown.size < 200) unknown.set(key, label)
@@ -202,7 +240,8 @@
     const rows = []
     const dates = new Set()
     const unknown = new Map()
-    const secondUnits = new Set(['creatinine','fasting','glucose','cholesterol','hdl','ldl','nonhdl','triglycerides','b9','b12','vitc','ft4','d25','testosterone'])
+    // Résultats sans unité : la valeur est la cellule qui suit le libellé.
+    const unitless = new Set(['fib4', 'inr', 'aptt', 'homa', 'ag-ratio'])
     // Une section d'urines peut se poursuivre sur la page suivante : l'état survit au saut de page.
     let urine = false
     let urineSkipped = 0
@@ -224,16 +263,21 @@
           if (items.length) urineSkipped++
           continue
         }
+        // « Seuil de détection : 12,6 mUI/L » décrit la technique ; « HbA1c < 5.7 % : risque faible » est une légende.
+        if (/seuil de detection/.test(heading) || items.some(item => /^\s*:/.test(line.slice(item.end)))) continue
         const first = items[0]
         const technicalPrefix = first && /^\(\d+\)\s*\([^)]*\)\s*$/.test(line.slice(0, first.start))
-        if (first && (!first.start || technicalPrefix) && previous && index - last <= 3 && secondUnits.has(keyFor(previous.name))) {
+        // Même analyse dans une seconde unité, sur une ligne qui commence par la valeur.
+        if (first && (!first.start || technicalPrefix) && previous && index - last <= 3 && keyFor(previous.name)) {
           if (unitKey(previous.unit) !== unitKey(first.unit)) rows.push(row(previous.name, first, page, referenceFR(line.slice(first.end))))
           previous = null
           continue
         }
-        const label = first ? labelText(line.slice(0, first.start)) : labelText(line.split(/\t| {2,}/)[0])
-        // Valeur sur la ligne de méthode, ou seule en début de ligne après « Technique » et « Prélèvement » (Cerba).
-        if (!keyFor(label) && first && awaiting && index - awaiting.index <= 3 && (first.start ? methodLine.test(fold(label)) : !label)) {
+        const cells = line.replace(/^[✔✓]\s*/, '').split(/\t| {2,}/)
+        const label = first ? labelText(line.slice(0, first.start)) : labelText(cells[0])
+        // Valeur sur la ligne de méthode, ou seule en début de ligne sous « Technique » et « Prélèvement » (Cerba).
+        if (!keyFor(label) && first && awaiting && index - awaiting.index <= (first.start ? 3 : 5) &&
+          (first.start ? methodLine.test(fold(label)) : !label)) {
           const candidate = row(awaiting.label, first, page, referenceFR(line.slice(first.end)))
           rows.push(candidate)
           previous = candidate
@@ -248,17 +292,19 @@
         }
         if (first) {
           const second = items[1]
-          const both = second && /^\s*soit\s*$/i.test(line.slice(first.end, second.start))
-          if (both) rows.push(row(label, first, page))
+          // « 42,5 % soit 2,98 G/L », ou avec la référence de la première valeur : « 61,9 % (55.8 à 66.1) soit 47,0 g/L ».
+          const between = second ? line.slice(first.end, second.start) : ''
+          const both = second && /^\s*(?:\([^()]*\)\s*)?soit\s*$/i.test(between)
+          if (both) rows.push(row(label, first, page, referenceFR(between)))
           const current = both ? second : first
           const candidate = row(label, current, page, referenceFR(line.slice(current.end)))
           rows.push(candidate)
           previous = candidate
           last = index
           awaiting = null
-        } else if (keyFor(label) === 'fib4') {
-          const cell = line.split(/\t| {2,}/)[1]?.trim()
-          if (cell && numberCell.test(cell)) rows.push(row(label, {value:cell, unit:''}, page))
+        } else if (unitless.has(keyFor(label))) {
+          const cell = cells[1]?.trim()
+          if (cell && numberCell.test(cell)) rows.push(row(label, {value:cell, unit:''}, page, referenceFR(cells.slice(2).join('\t'))))
         } else {
           // Une nouvelle analyse commence : la ligne suivante ne peut plus être la seconde unité de la précédente.
           awaiting = {label, index}
@@ -437,6 +483,20 @@
     return 'in'
   }
 
-  globalThis.Lab = {markers, fold, groupFor, nameFor, validDate, unitKey, exactNumber, pagesFromText, parse, referenceRange, judge}
+  // Nouvelle lecture d'un bilan déjà enregistré : résultats lus qui n'y figurent pas encore.
+  // Une analyse déjà présente dans la même unité et à la même date est considérée comme lue, même si
+  // sa valeur ou son nom ont été corrigés à la main : une correction n'est jamais doublée par l'original.
+  function missing(existing, proposed) {
+    const signature = item => [groupFor(item.name), unitKey(item.unit), item.date || ''].join('\u001f')
+    const present = new Map()
+    for (const item of existing) present.set(signature(item), (present.get(signature(item)) ?? 0) + 1)
+    return proposed.filter(item => {
+      const count = present.get(signature(item)) ?? 0
+      if (count) present.set(signature(item), count - 1)
+      return !count
+    })
+  }
+
+  globalThis.Lab = {markers, fold, groupFor, nameFor, validDate, unitKey, exactNumber, pagesFromText, parse, missing, referenceRange, judge}
 })()
 

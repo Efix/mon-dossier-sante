@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-fo6LamQbeYObt9XbzQt7GFdsaCXiYSnXESU8mKRDcCY=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-3Ztjwh6Jz2Ou6EH+UkxSZsRshOKdEL5y6fdIGGj0FMM=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta name="application-version" content="1.1.2">
@@ -302,6 +302,10 @@ dialog::backdrop { background: #0d201fb3; }
   border-radius: 9px;
   background: #fbfcfa;
 }
+.reread-list { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.reread-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; }
+.result-row.result-new { border-color: var(--teal); background: #f1f8f3; }
+.new-pill { background: var(--teal); color: #fff; }
 .result-row .row-tail { grid-column: 1 / -1; padding: 2px 0 0; display: flex; align-items: center; gap: 6px 12px; flex-wrap: wrap; }
 .row-ref input, .result-row input { min-width: 0; }
 .result-row .row-remove { align-self: end; }
@@ -729,7 +733,8 @@ dialog::backdrop { background: #0d201fb3; }
     ['ferritin', 'Ferritine', 'Ferritina|Ferritine sérique|Ferritina sérica'],
     ['iron', 'Fer sérique', 'Ferro|Ferro sérico|Ferro no soro|Fer|Dosagem de ferro'],
     ['transferrin', 'Transferrine', 'Transferrina'],
-    ['tsat', 'Saturation de la transferrine', 'Coefficient de saturation de la transferrine|Saturação da transferrina|Índice de saturação da transferrina'],
+    ['tsat', 'Saturation de la transferrine', 'Coefficient de saturation de la transferrine|Saturação da transferrina|Índice de saturação da transferrina|' +
+      'Coefficient de saturation|Coefficient de saturation en fer de la transferrine|CS-Tf'],
     ['rbc', 'Hématies', 'Hemácias|Eritrócitos|Globules rouges'],
     ['hemoglobin', 'Hémoglobine', 'Hemoglobina|Hb'],
     ['hematocrit', 'Hématocrite', 'Hematócrito|Ht'],
@@ -746,6 +751,9 @@ dialog::backdrop { background: #0d201fb3; }
     ['ig', 'Granulocytes immatures', 'Granulócitos imaturos'],
     ['platelets', 'Plaquettes', 'Plaquetas|Contagem de plaquetas'],
     ['mpv', 'Volume plaquettaire moyen', 'VPM|Volume plaquetário médio'],
+    ['pt', 'Taux de prothrombine (TP)', 'Taux de prothrombine|TP|Tempo de protrombina (atividade)'],
+    ['inr', 'INR', 'International normalized ratio'],
+    ['aptt', 'TCA (ratio patient/témoin)', 'Ratio patient/témoin|TCA ratio|Ratio TCA'],
     ['crp', 'CRP', 'Proteína C reativa|Protéine C réactive|Protéine C réactive (CRP)|Proteína C reativa (PCR)|PCR'],
     ['creatinine', 'Créatinine', 'Creatinina|Créatinine sérique|Creatinina sérica|Dosagem de creatinina'],
     ['egfr', 'DFG (CKD-EPI)', 'DFG CKD-EPI|DFG calculé selon la formule CKD-EPI|DFG selon CKD-EPI|DFG CKD-EPI 2021|DFG calculé selon CKD-EPI|DFG calculé selon CKD-EPI 2021'],
@@ -760,8 +768,11 @@ dialog::backdrop { background: #0d201fb3; }
     ['potassium', 'Potassium', 'Potássio|Potassium sérique|Potássio sérico|K'],
     ['chloride', 'Chlorures', 'Cloro|Cloreto|Cloreto sérico|Chlore|Chlorures sériques'],
     ['calcium', 'Calcium total', 'Cálcio total|Calcium|Calcémie|Cálcio sérico'],
+    ['calcium-corrected', 'Calcium corrigé', 'Calcium corrigé (albumine)|Calcémie corrigée|Cálcio corrigido'],
     ['magnesium', 'Magnésium', 'Magnésio|Magnésium sérique'],
     ['zinc', 'Zinc', 'Zinco|Zinc sérique|Zinco sérico'],
+    ['copper', 'Cuivre', 'Cuivre sérique|Cobre|Cobre sérico'],
+    ['selenium', 'Sélénium', 'Selênio|Sélénium sérique'],
     ['phosphate', 'Phosphore', 'Fósforo|Phosphatémie|Phosphates inorganiques'],
     ['fasting', 'Glycémie à jeun', 'Glicemia em jejum|Glicose em jejum|Glicemia de jejum|Glucose à jeun'],
     ['glucose', 'Glucose sanguin', 'Glicose sanguínea|Glicose|Glicemia|Glycémie|Glucose'],
@@ -776,12 +787,36 @@ dialog::backdrop { background: #0d201fb3; }
     ['ggt', 'Gamma-GT', 'GGT|Gama GT|Gama glutamil transferase|Gamma glutamyl transferase (GGT)'],
     ['alp', 'Phosphatases alcalines', 'Fosfatase alcalina|Phosphatase alcaline|PAL'],
     ['bili', 'Bilirubine totale', 'Bilirrubina total'],
+    ['protein', 'Protides totaux', 'Protéines totales|Protides totaux sériques|Protéines sériques totales|Proteínas totais'],
     ['albumin', 'Albumine sanguine', 'Albumine|Albumine sérique|Albumina|Albumina sérica'],
+    ['alpha1', 'Alpha-1 globulines', 'Alpha 1 globulines|Alfa 1 globulinas'],
+    ['alpha2', 'Alpha-2 globulines', 'Alpha 2 globulines|Alfa 2 globulinas'],
+    ['beta1', 'Bêta-1 globulines', 'Beta 1 globulines|Beta 1 globulinas'],
+    ['beta2', 'Bêta-2 globulines', 'Beta 2 globulines|Beta 2 globulinas'],
+    ['gamma', 'Gammaglobulines', 'Gamma globulines|Gama globulinas'],
+    ['ag-ratio', 'Rapport albumine/globulines', 'Rapport A/G|Relação albumina/globulina'],
+    ['iga', 'Immunoglobulines A (IgA)', 'Immunoglobuline A|Immunoglobulines A|IgA|Imunoglobulina A'],
     ['fib4', 'FIB-4', 'Calcul du FIB-4|Score FIB-4'],
     ['b9', 'Folates (vitamine B9)', 'Folates|Vitamine B9|Ácido fólico|Folato sérico|Folato'],
     ['b12', 'Vitamine B12', 'Vitamina B12|Cobalamina|Cobalamine'],
+    ['vita', 'Vitamine A (rétinol)', 'Vitamine A|Rétinol|Vitamina A|Retinol'],
+    ['b6', 'Vitamine B6', 'Vitamine B6 (pyridoxal 5 phosphate)|Pyridoxal 5 phosphate|Pyridoxal phosphate|Vitamina B6'],
     ['vitc', 'Vitamine C', 'Vitamine C (ascorbate)|Ascorbate|Acide ascorbique|Vitamina C|Ácido ascórbico'],
-    ['d25', 'Vitamine D (25-OH)', '25 OH vitamine D|25 OH vitamina D|Vitamina D 25 OH|25 hidroxivitamina D|25 hydroxyvitamine D|Vitamine D totale (D2+D3)'],
+    ['vite', 'Vitamine E (alpha-tocophérol)', 'Vitamine E|Alpha-tocophérol|Vitamina E|Alfa-tocoferol'],
+    ['d25', 'Vitamine D (25-OH)', '25 OH vitamine D|25 OH vitamina D|Vitamina D 25 OH|25 hidroxivitamina D|25 hydroxyvitamine D|Vitamine D totale (D2+D3)|' +
+      'Vitamine D2/D3 (25-OH vit D)|Vitamine D2/D3|Vitamine D (25-OH)'],
+    ['insulin', 'Insuline à jeun', 'Insuline|Insulina|Insulina em jejum|Insulinémie à jeun'],
+    ['homa', 'Index HOMA (insulinorésistance)', 'Index HOMA d’insulinorésistance|Index HOMA|HOMA-IR|Indice HOMA'],
+    ['prolactin', 'Prolactine', 'Prolactina'],
+    ['estradiol', 'Estradiol', 'Œstradiol|Oestradiol|Estradiol (E2)'],
+    ['fsh', 'FSH', 'Hormone folliculostimulante|Hormônio folículo estimulante'],
+    ['lh', 'LH', 'Hormone lutéinisante|Hormônio luteinizante'],
+    ['cortisol', 'Cortisol', 'Cortisol (matin)|Cortisol du matin|Cortisol sérique|Cortisolémie'],
+    ['dhea', 'DHEA', 'Déhydroépiandrostérone|Dehydroepiandrosterone (D.H.E.A.)|D.H.E.A.'],
+    ['protein-c', 'Protéine C (activité)', 'Dosage fonctionnel de la protéine C|Protéine C activité fonctionnelle|Activité de la protéine C'],
+    ['protein-s', 'Protéine S (activité)', 'Dosage fonctionnel de la protéine S|Protéine S activité fonctionnelle|Activité de la protéine S'],
+    ['ttg-iga', 'Anticorps anti-transglutaminase IgA', 'Ac anti-transglutaminase tissulaire IgA|Anticorps anti-transglutaminase tissulaire IgA|' +
+      'Anti-transglutaminase IgA|Ac anti-transglutaminase IgA'],
     ['testosterone', 'Testostérone totale', 'Testostérone|Testostérone sérique|Testosterona|Testosterona total|Testosterona total sérica'],
     ['testosterone-free', 'Testostérone libre', 'Testosterona livre'],
     ['testosterone-bio', 'Testostérone biodisponible', 'Testosterona biodisponível'],
@@ -813,7 +848,9 @@ dialog::backdrop { background: #0d201fb3; }
   }
   const labelText = value => clean(value)
     .replace(/^[\s✔✓•*▪¤▫]+|[\s:.*·…#]+$/gu, '').replace(/\s+/g, ' ')
-  const keyFor = name => aliases.get(fold(name)) ?? ''
+  // « ZINC (Absorption atomique) », « VITAMINE E (ALPHA-TOCOPHEROL) (RF-MSMS) » : sans nom connu tel quel,
+  // le libellé est essayé sans ses parenthèses finales, qui donnent souvent la technique.
+  const keyFor = name => aliases.get(fold(name)) ?? aliases.get(fold(String(name ?? '').replace(/(?:\s*\([^()]*\))+\s*$/, ''))) ?? ''
   const groupFor = name => keyFor(name) || 'libre:' + fold(name)
   const nameFor = (key, name) => names.get(key) ?? name
   const number = String.raw`(?:[<>≤≥]=?[ ]*)?[−+-]?(?:\d{1,3}(?:[ .,'\u00a0\u202f]\d{3}){1,3}(?:[.,]\d+)?|\d+(?:[.,]\d+)?)`
@@ -824,6 +861,7 @@ dialog::backdrop { background: #0d201fb3; }
     '(?:[kKmµμu]?mol|nmol|pmol|[mcdnp]g|' + micro + 'g|[GgT]|mmol)\\s*/\\s*(?:mL|dL|L)',
     '(?:10\\s*[\\^³⁶63]?\\s*[36]?|milh(?:ões|oes)|mil|c[eé]lulas?|cel|cél)?\\s*/\\s*(?:mm[³3]|[µμu]L|mL)',
     'm?Eq\\s*/\\s*(?:mL|dL|L)',
+    'mmol\\s*/\\s*mol',
     'mm\\s*/\\s*(?:1\\s*)?h(?:ora|eure)?',
     'fL|pg|%|segundos?|s',
     'mm',
@@ -904,16 +942,20 @@ dialog::backdrop { background: #0d201fb3; }
   const shortText = text => text.length > 240 ? text.match(textResult)?.[0] ?? text.slice(0, 240) : text
 
   function referenceFR(tail) {
-    // « N : 4,6-14,9 mg/l » : valeurs normales des comptes rendus du laboratoire spécialisé Cerba.
-    const part = tail.trimStart().split(/\t| {2,}/)[0]?.replace(/^N\s*:\s*/, '')
+    // « N : 4,6-14,9 mg/l », « N > 49 » : valeurs normales des comptes rendus du laboratoire spécialisé Cerba.
+    // Ailleurs, une borne seule sans « à » (« < 3 ») peut être un résultat antérieur : elle n'est pas reprise.
+    const normal = /^N\s*(?::|(?=[<>≤≥]))\s*/
+    const cell = tail.trimStart().split(/\t| {2,}/)[0] ?? ''
+    const part = cell.replace(normal, '')
     if (!part || part.length > 100 || /^\d{2}[/.-]\d{2}[/.-]/.test(part)) return ''
     const range = /\d\s*(?:à|[-–])\s*\d/.test(part)
-    const explicitBound = /^(?:\(\s*[<>≤≥]=?\s*(?:à\s*)?\d.*\)|[<>≤≥]=?\s*à\s*\d.*)$/i.test(part)
+    const explicitBound = /^(?:\(\s*[<>≤≥]=?\s*(?:à\s*)?\d.*\)|[<>≤≥]=?\s*à\s*\d.*)$/i.test(part) ||
+      (normal.test(cell) && /^[<>≤≥]=?\s*\d/.test(part))
     return range || explicitBound ? part.trim() : ''
   }
 
   // Lignes « libellé + valeur » dont le libellé est inconnu : signalées à l'import au lieu de disparaître.
-  const notAName = /^(?:soit|ou|et|valeurs?|valor(?:es)?|referenc|risque|risco|objectif|cible|seuil|normal|interpretation|resultado|adult|homens|mulheres|crianca|desejavel|otimo|limitrofe|alto|baixo|ate|acima|inferior|superior|si|pour|en|de|un|une|le|la|les|des|du|au|aux|chez|dans|avec|sans|selon|ce|cet|cette|il|elle|on|nous|vous)(?: |$)/
+  const notAName = /^(?:soit|ou|et|valeurs?|valor(?:es)?|referenc|risque|risco|objectif|cible|seuil|normales?|interpretation|resultado|adult|homens|mulheres|crianca|desejavel|otimo|limitrofe|alto|baixo|ate|acima|inferior|superior|si|pour|en|de|un|une|le|la|les|des|du|au|aux|chez|dans|avec|sans|selon|ce|cet|cette|il|elle|on|nous|vous)(?: |$)/
   const noteUnknown = (unknown, label) => {
     const key = fold(label)
     if (label.length <= 80 && /\p{L}{3}/u.test(label) && !notAName.test(key) && unknown.size < 200) unknown.set(key, label)
@@ -926,7 +968,8 @@ dialog::backdrop { background: #0d201fb3; }
     const rows = []
     const dates = new Set()
     const unknown = new Map()
-    const secondUnits = new Set(['creatinine','fasting','glucose','cholesterol','hdl','ldl','nonhdl','triglycerides','b9','b12','vitc','ft4','d25','testosterone'])
+    // Résultats sans unité : la valeur est la cellule qui suit le libellé.
+    const unitless = new Set(['fib4', 'inr', 'aptt', 'homa', 'ag-ratio'])
     // Une section d'urines peut se poursuivre sur la page suivante : l'état survit au saut de page.
     let urine = false
     let urineSkipped = 0
@@ -948,16 +991,21 @@ dialog::backdrop { background: #0d201fb3; }
           if (items.length) urineSkipped++
           continue
         }
+        // « Seuil de détection : 12,6 mUI/L » décrit la technique ; « HbA1c < 5.7 % : risque faible » est une légende.
+        if (/seuil de detection/.test(heading) || items.some(item => /^\s*:/.test(line.slice(item.end)))) continue
         const first = items[0]
         const technicalPrefix = first && /^\(\d+\)\s*\([^)]*\)\s*$/.test(line.slice(0, first.start))
-        if (first && (!first.start || technicalPrefix) && previous && index - last <= 3 && secondUnits.has(keyFor(previous.name))) {
+        // Même analyse dans une seconde unité, sur une ligne qui commence par la valeur.
+        if (first && (!first.start || technicalPrefix) && previous && index - last <= 3 && keyFor(previous.name)) {
           if (unitKey(previous.unit) !== unitKey(first.unit)) rows.push(row(previous.name, first, page, referenceFR(line.slice(first.end))))
           previous = null
           continue
         }
-        const label = first ? labelText(line.slice(0, first.start)) : labelText(line.split(/\t| {2,}/)[0])
-        // Valeur sur la ligne de méthode, ou seule en début de ligne après « Technique » et « Prélèvement » (Cerba).
-        if (!keyFor(label) && first && awaiting && index - awaiting.index <= 3 && (first.start ? methodLine.test(fold(label)) : !label)) {
+        const cells = line.replace(/^[✔✓]\s*/, '').split(/\t| {2,}/)
+        const label = first ? labelText(line.slice(0, first.start)) : labelText(cells[0])
+        // Valeur sur la ligne de méthode, ou seule en début de ligne sous « Technique » et « Prélèvement » (Cerba).
+        if (!keyFor(label) && first && awaiting && index - awaiting.index <= (first.start ? 3 : 5) &&
+          (first.start ? methodLine.test(fold(label)) : !label)) {
           const candidate = row(awaiting.label, first, page, referenceFR(line.slice(first.end)))
           rows.push(candidate)
           previous = candidate
@@ -972,17 +1020,19 @@ dialog::backdrop { background: #0d201fb3; }
         }
         if (first) {
           const second = items[1]
-          const both = second && /^\s*soit\s*$/i.test(line.slice(first.end, second.start))
-          if (both) rows.push(row(label, first, page))
+          // « 42,5 % soit 2,98 G/L », ou avec la référence de la première valeur : « 61,9 % (55.8 à 66.1) soit 47,0 g/L ».
+          const between = second ? line.slice(first.end, second.start) : ''
+          const both = second && /^\s*(?:\([^()]*\)\s*)?soit\s*$/i.test(between)
+          if (both) rows.push(row(label, first, page, referenceFR(between)))
           const current = both ? second : first
           const candidate = row(label, current, page, referenceFR(line.slice(current.end)))
           rows.push(candidate)
           previous = candidate
           last = index
           awaiting = null
-        } else if (keyFor(label) === 'fib4') {
-          const cell = line.split(/\t| {2,}/)[1]?.trim()
-          if (cell && numberCell.test(cell)) rows.push(row(label, {value:cell, unit:''}, page))
+        } else if (unitless.has(keyFor(label))) {
+          const cell = cells[1]?.trim()
+          if (cell && numberCell.test(cell)) rows.push(row(label, {value:cell, unit:''}, page, referenceFR(cells.slice(2).join('\t'))))
         } else {
           // Une nouvelle analyse commence : la ligne suivante ne peut plus être la seconde unité de la précédente.
           awaiting = {label, index}
@@ -1161,7 +1211,21 @@ dialog::backdrop { background: #0d201fb3; }
     return 'in'
   }
 
-  globalThis.Lab = {markers, fold, groupFor, nameFor, validDate, unitKey, exactNumber, pagesFromText, parse, referenceRange, judge}
+  // Nouvelle lecture d'un bilan déjà enregistré : résultats lus qui n'y figurent pas encore.
+  // Une analyse déjà présente dans la même unité et à la même date est considérée comme lue, même si
+  // sa valeur ou son nom ont été corrigés à la main : une correction n'est jamais doublée par l'original.
+  function missing(existing, proposed) {
+    const signature = item => [groupFor(item.name), unitKey(item.unit), item.date || ''].join('\u001f')
+    const present = new Map()
+    for (const item of existing) present.set(signature(item), (present.get(signature(item)) ?? 0) + 1)
+    return proposed.filter(item => {
+      const count = present.get(signature(item)) ?? 0
+      if (count) present.set(signature(item), count - 1)
+      return !count
+    })
+  }
+
+  globalThis.Lab = {markers, fold, groupFor, nameFor, validDate, unitKey, exactNumber, pagesFromText, parse, missing, referenceRange, judge}
 })()
 
 ;
@@ -2309,6 +2373,7 @@ dialog::backdrop { background: #0d201fb3; }
       urls = new Set()
       session = null
       pendingOpen = null
+      rereading = null
       metric = unit = ''
       showAccess()
     } catch (error) {
@@ -3082,13 +3147,84 @@ dialog::backdrop { background: #0d201fb3; }
     application.append(el('p', 'small muted', online ?
       'La page d’accueil du site mène toujours à la dernière version. Une version téléchargée s’ouvre depuis votre disque, sans connexion.' :
       'Une mise à jour ne remplace que ce fichier HTML : ouvrez votre coffre .sante avec la nouvelle version. Gardez-la ensuite, car une version plus ancienne peut ne pas relire un coffre enregistré par une plus récente.'))
-    grid.append(device, copies, secret, application)
+    grid.append(device, copies, secret, application, rereadPanel())
     const help = el('section', 'panel help-panel')
     help.append(el('h2', '', 'Chiffrement et import'),
       el('p', 'muted', 'Le fichier .sante contient les documents et les résultats chiffrés. L’application s’ouvre hors ligne, sans compte. Le coffre se verrouille après dix minutes d’inactivité.'),
       el('p', 'muted', 'L’extraction lit le texte des PDF. Pour un scan, ajoutez le fichier et saisissez les résultats à partir de l’original. Vous pouvez aussi coller le texte d’un bilan.'),
       el('p', 'muted', 'Le fichier .sante permet aussi de déplacer le dossier sur un autre appareil. La phrase secrète est nécessaire pour l’ouvrir.'))
     $('view').replaceChildren(head, grid, help)
+  }
+
+  // « Relire les bilans » : les PDF déjà importés sont relus avec la lecture de cette version. Rien n'est
+  // ajouté d'office : chaque bilan qui a de nouveaux résultats s'ouvre dans l'éditeur, pour vérification.
+  let rereading = null
+  const pdfBilans = () => session.records.filter(record => record.kind === 'bio' && record.file && Coffre.isPDF(record.file.bytes))
+
+  function rereadPanel() {
+    const panel = el('section', 'panel')
+    const total = pdfBilans().length
+    const start = button('Relire les bilans', () => { void rereadAll() })
+    start.disabled = !total || Boolean(rereading?.running)
+    const status = el('p', 'small muted')
+    status.setAttribute('role', 'status')
+    panel.append(el('h2', '', 'Relire les bilans'), el('p', 'muted', 'Une nouvelle version peut reconnaître des analyses que la précédente laissait de côté. ' +
+      'Les PDF de vos bilans sont relus sur cet appareil, et les nouveaux résultats vous sont proposés bilan par bilan, à vérifier avant de les ajouter.'),
+      start, status)
+    if (!total) {
+      status.textContent = 'Aucun bilan avec un PDF dans le dossier.'
+      return panel
+    }
+    const state = rereading?.session === session ? rereading : null
+    if (!state) return panel
+    if (state.running) {
+      status.textContent = 'Lecture du bilan ' + Math.min(state.done + 1, state.total) + ' sur ' + state.total + '…'
+      return panel
+    }
+    // Ce qui a été ajouté depuis (bilan vérifié, ligne saisie à la main) ne compte plus comme nouveau.
+    const pending = state.found.map(entry => {
+      const record = session.records.find(item => item.id === entry.id)
+      return record && {record, entry, rows:Lab.missing(record.results, entry.rows)}
+    }).filter(item => item?.rows.length)
+    const failed = state.failed === 1 ? ' Un PDF n’a pas pu être lu.' : state.failed ? ' ' + state.failed + ' PDF n’ont pas pu être lus.' : ''
+    status.textContent = pending.length ? (pending.length === 1 ? 'Un bilan a' : pending.length + ' bilans ont') + ' de nouveaux résultats à vérifier.' + failed :
+      'Aucun nouveau résultat : ' + (state.total === 1 ? 'le bilan relu est à jour.' : 'les ' + state.total + ' bilans relus sont à jour.') + failed
+    if (pending.length) {
+      const list = el('ul', 'reread-list')
+      for (const {record, entry, rows} of pending) {
+        const line = el('li')
+        line.append(el('span', '', record.title + ' · ' + formatDate(record.date) + ' · ' + rows.length + ' nouveau(x) résultat(s)'),
+          button('Vérifier et ajouter', () => openEditor('bio', record, {rows, lab:entry.lab, omissions:entry.omissions}), 'secondary compact'))
+        list.append(line)
+      }
+      panel.append(list)
+    }
+    return panel
+  }
+
+  async function rereadAll() {
+    if (busy || !session || rereading?.running) return
+    const owner = session
+    const records = pdfBilans()
+    const state = rereading = {session:owner, running:true, total:records.length, done:0, failed:0, found:[]}
+    if (view === 'vault') renderVault()
+    try {
+      for (const record of records) {
+        try {
+          const proposed = Lab.parse(await PdfLocal.extract(record.file.bytes), record.lab === 'other' ? 'auto' : record.lab)
+          const rows = Lab.missing(record.results, proposed.rows)
+          if (rows.length) state.found.push({id:record.id, rows, lab:proposed.lab, omissions:omissionsOf(proposed)})
+        } catch {
+          state.failed++
+        }
+        if (session !== owner) return
+        state.done++
+        if (view === 'vault') renderVault()
+      }
+    } finally {
+      state.running = false
+      if (session === owner && view === 'vault') renderVault()
+    }
   }
 
   function openRekey() {
@@ -3387,7 +3523,8 @@ dialog::backdrop { background: #0d201fb3; }
     notice('report-message')
   }
 
-  function openEditor(kind, existing = null) {
+  // `additions` : résultats trouvés par « Relire les bilans », ajoutés aux lignes existantes pour vérification.
+  function openEditor(kind, existing = null, additions = null) {
     if (busy || !session) return
     clearEditor()
     const form = Dossier.forms[kind]
@@ -3405,6 +3542,10 @@ dialog::backdrop { background: #0d201fb3; }
     $('confirm-results').hidden = true
     for (const item of existing?.results ?? []) addResult(item)
     syncEditorKind(existing?.fields)
+    if (additions) {
+      if (existing?.lab === 'other' && additions.lab !== 'other') $('doc-lab').value = additions.lab
+      showAdditions(additions.rows, additions.omissions ?? '')
+    }
     $('editor').showModal()
   }
   $('editor').addEventListener('cancel', event => {
@@ -3519,16 +3660,46 @@ dialog::backdrop { background: #0d201fb3; }
     if (file) void importAttachment(file)
   })
 
-  function acceptProposals({lab, date, rows, multipleDates, unknown = [], urineSkipped = 0, unnamed = 0}) {
-    if ($('doc-lab').value === 'auto') $('doc-lab').value = lab
-    if (!$('doc-title').value || $('doc-title').value === 'Bilan biologique') $('doc-title').value = titleFor(lab)
-    if (date && !$('doc-date').value) $('doc-date').value = date
+  // Ce que la lecture a laissé de côté, à compléter à la main si besoin.
+  function omissionsOf({unknown = [], urineSkipped = 0, unnamed = 0}) {
     const ignored = []
     if (unknown.length) ignored.push(unknown.length + ' ligne(s) avec une valeur mais sans analyse reconnue : ' +
       unknown.slice(0, 12).join(', ') + (unknown.length > 12 ? '…' : '') + '.')
     if (unnamed) ignored.push(unnamed + ' résultat(s) dont l’analyse n’a pas été identifiée.')
     if (urineSkipped) ignored.push(urineSkipped + ' ligne(s) d’analyse d’urine laissée(s) de côté.')
-    const omissions = ignored.length ? ' Non repris, à ajouter à la main si besoin : ' + ignored.join(' ') : ''
+    return ignored.length ? ' Non repris, à ajouter à la main si besoin : ' + ignored.join(' ') : ''
+  }
+
+  // Nouvelle lecture d'un bilan qui a déjà des lignes : elles restent telles quelles, corrections comprises ;
+  // seuls les résultats absents s'ajoutent, marqués « Nouveau », et la vérification est de nouveau demandée.
+  function showAdditions(rows, omissions) {
+    const added = rows.slice(0, Math.max(0, 1000 - $('result-editor').children.length))
+    for (const item of added) addResult(item, true)
+    if (!added.length) {
+      notice('import-message', 'Aucun nouveau résultat dans ce PDF : les lignes actuelles sont conservées.' + omissions, omissions ? 'warn' : '')
+      return
+    }
+    draft.proposed = true
+    draft.changed = true
+    $('confirm-results').hidden = false
+    $('checked-results').checked = false
+    notice('import-message', added.length + ' nouveau(x) résultat(s), marqué(s) « Nouveau » en fin de liste. Les lignes déjà présentes et vos corrections ' +
+      'sont conservées. Vérifiez les nouvelles lignes avec l’original.' + omissions, 'warn')
+    $('result-editor').querySelector('.result-new')?.scrollIntoView({block:'nearest'})
+  }
+
+  function mergeProposals(proposed) {
+    const current = Array.from($('result-editor').children, entry =>
+      Object.fromEntries(Array.from(entry.querySelectorAll('[data-field]'), input => [input.dataset.field, input.value.trim()])))
+    if ($('doc-lab').value === 'other' && proposed.lab !== 'other') $('doc-lab').value = proposed.lab
+    showAdditions(Lab.missing(current, proposed.rows), omissionsOf(proposed))
+  }
+
+  function acceptProposals({lab, date, rows, multipleDates, unknown = [], urineSkipped = 0, unnamed = 0}) {
+    if ($('doc-lab').value === 'auto') $('doc-lab').value = lab
+    if (!$('doc-title').value || $('doc-title').value === 'Bilan biologique') $('doc-title').value = titleFor(lab)
+    if (date && !$('doc-date').value) $('doc-date').value = date
+    const omissions = omissionsOf({unknown, urineSkipped, unnamed})
     if (!rows.length) {
       notice('import-message', 'Aucun résultat reconnu. Vous pouvez joindre l’original et saisir les valeurs à la main.' + omissions, 'warn')
       return
@@ -3584,6 +3755,8 @@ dialog::backdrop { background: #0d201fb3; }
           $('doc-kind').value = report.kind
           syncEditorKind()
           acceptReport(report, true, 'Ce PDF n’est pas un bilan de laboratoire : classé en « ' + Coffre.types[report.kind] + ' ». ')
+        } else if ($('result-editor').children.length) {
+          mergeProposals(proposed)
         } else {
           acceptProposals(proposed)
         }
@@ -3636,8 +3809,6 @@ dialog::backdrop { background: #0d201fb3; }
 
   async function reread() {
     if (!draft?.file || draft.loading || !Coffre.isPDF(draft.file.bytes)) return
-    const biology = $('doc-kind').value === 'bio'
-    if (biology && $('result-editor').children.length && !confirm('Relire le PDF et remplacer les lignes proposées si des résultats sont trouvés ?')) return
     const active = draft
     active.loading = true
     updateAttachmentUI()
@@ -3656,8 +3827,8 @@ dialog::backdrop { background: #0d201fb3; }
     acceptProposals(Lab.parse(Lab.pagesFromText($('paste-text').value), $('doc-lab').value))
   })
 
-  function addResult(item = {}) {
-    const row = el('div', 'result-row')
+  function addResult(item = {}, fresh = false) {
+    const row = el('div', fresh ? 'result-row result-new' : 'result-row')
     row.dataset.id = item.id || crypto.randomUUID()
     row.dataset.page = String(item.page || 0)
     const field = (key, label, limit, text, css = '') => {
@@ -3677,6 +3848,7 @@ dialog::backdrop { background: #0d201fb3; }
       if (!$('result-editor').children.length) $('confirm-results').hidden = true
     }, 'text-button danger compact row-remove')
     const tail = el('div', 'row-tail')
+    if (fresh) tail.append(el('span', 'pill new-pill', 'Nouveau'))
     if (item.page) tail.append(el('span', 'muted small', 'Page ' + item.page))
     const date = el('input', 'row-date')
     date.dataset.field = 'date'

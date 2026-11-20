@@ -115,13 +115,84 @@
     application.append(el('p', 'small muted', online ?
       'La page d’accueil du site mène toujours à la dernière version. Une version téléchargée s’ouvre depuis votre disque, sans connexion.' :
       'Une mise à jour ne remplace que ce fichier HTML : ouvrez votre coffre .sante avec la nouvelle version. Gardez-la ensuite, car une version plus ancienne peut ne pas relire un coffre enregistré par une plus récente.'))
-    grid.append(device, copies, secret, application)
+    grid.append(device, copies, secret, application, rereadPanel())
     const help = el('section', 'panel help-panel')
     help.append(el('h2', '', 'Chiffrement et import'),
       el('p', 'muted', 'Le fichier .sante contient les documents et les résultats chiffrés. L’application s’ouvre hors ligne, sans compte. Le coffre se verrouille après dix minutes d’inactivité.'),
       el('p', 'muted', 'L’extraction lit le texte des PDF. Pour un scan, ajoutez le fichier et saisissez les résultats à partir de l’original. Vous pouvez aussi coller le texte d’un bilan.'),
       el('p', 'muted', 'Le fichier .sante permet aussi de déplacer le dossier sur un autre appareil. La phrase secrète est nécessaire pour l’ouvrir.'))
     $('view').replaceChildren(head, grid, help)
+  }
+
+  // « Relire les bilans » : les PDF déjà importés sont relus avec la lecture de cette version. Rien n'est
+  // ajouté d'office : chaque bilan qui a de nouveaux résultats s'ouvre dans l'éditeur, pour vérification.
+  let rereading = null
+  const pdfBilans = () => session.records.filter(record => record.kind === 'bio' && record.file && Coffre.isPDF(record.file.bytes))
+
+  function rereadPanel() {
+    const panel = el('section', 'panel')
+    const total = pdfBilans().length
+    const start = button('Relire les bilans', () => { void rereadAll() })
+    start.disabled = !total || Boolean(rereading?.running)
+    const status = el('p', 'small muted')
+    status.setAttribute('role', 'status')
+    panel.append(el('h2', '', 'Relire les bilans'), el('p', 'muted', 'Une nouvelle version peut reconnaître des analyses que la précédente laissait de côté. ' +
+      'Les PDF de vos bilans sont relus sur cet appareil, et les nouveaux résultats vous sont proposés bilan par bilan, à vérifier avant de les ajouter.'),
+      start, status)
+    if (!total) {
+      status.textContent = 'Aucun bilan avec un PDF dans le dossier.'
+      return panel
+    }
+    const state = rereading?.session === session ? rereading : null
+    if (!state) return panel
+    if (state.running) {
+      status.textContent = 'Lecture du bilan ' + Math.min(state.done + 1, state.total) + ' sur ' + state.total + '…'
+      return panel
+    }
+    // Ce qui a été ajouté depuis (bilan vérifié, ligne saisie à la main) ne compte plus comme nouveau.
+    const pending = state.found.map(entry => {
+      const record = session.records.find(item => item.id === entry.id)
+      return record && {record, entry, rows:Lab.missing(record.results, entry.rows)}
+    }).filter(item => item?.rows.length)
+    const failed = state.failed === 1 ? ' Un PDF n’a pas pu être lu.' : state.failed ? ' ' + state.failed + ' PDF n’ont pas pu être lus.' : ''
+    status.textContent = pending.length ? (pending.length === 1 ? 'Un bilan a' : pending.length + ' bilans ont') + ' de nouveaux résultats à vérifier.' + failed :
+      'Aucun nouveau résultat : ' + (state.total === 1 ? 'le bilan relu est à jour.' : 'les ' + state.total + ' bilans relus sont à jour.') + failed
+    if (pending.length) {
+      const list = el('ul', 'reread-list')
+      for (const {record, entry, rows} of pending) {
+        const line = el('li')
+        line.append(el('span', '', record.title + ' · ' + formatDate(record.date) + ' · ' + rows.length + ' nouveau(x) résultat(s)'),
+          button('Vérifier et ajouter', () => openEditor('bio', record, {rows, lab:entry.lab, omissions:entry.omissions}), 'secondary compact'))
+        list.append(line)
+      }
+      panel.append(list)
+    }
+    return panel
+  }
+
+  async function rereadAll() {
+    if (busy || !session || rereading?.running) return
+    const owner = session
+    const records = pdfBilans()
+    const state = rereading = {session:owner, running:true, total:records.length, done:0, failed:0, found:[]}
+    if (view === 'vault') renderVault()
+    try {
+      for (const record of records) {
+        try {
+          const proposed = Lab.parse(await PdfLocal.extract(record.file.bytes), record.lab === 'other' ? 'auto' : record.lab)
+          const rows = Lab.missing(record.results, proposed.rows)
+          if (rows.length) state.found.push({id:record.id, rows, lab:proposed.lab, omissions:omissionsOf(proposed)})
+        } catch {
+          state.failed++
+        }
+        if (session !== owner) return
+        state.done++
+        if (view === 'vault') renderVault()
+      }
+    } finally {
+      state.running = false
+      if (session === owner && view === 'vault') renderVault()
+    }
   }
 
   function openRekey() {

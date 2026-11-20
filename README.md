@@ -10,7 +10,7 @@ Mon dossier santé est une application gratuite qui fonctionne entièrement dans
 
 ## Ce que vous pouvez faire
 
-- **Importer vos bilans de laboratoire en PDF.** L'application lit les résultats (analyse, valeur, unité, valeurs de référence) et vous les propose. Vous les vérifiez avant de les ajouter. La lecture automatique reconnaît les comptes rendus Cerballiance et Check-Up ; pour les autres laboratoires, vous saisissez ou corrigez les valeurs vous-même.
+- **Importer vos bilans de laboratoire en PDF.** L'application lit les résultats (analyse, valeur, unité, valeurs de référence) et vous les propose. Vous les vérifiez avant de les ajouter. La lecture automatique reconnaît les comptes rendus Cerballiance, y compris les pages des analyses transmises au laboratoire spécialisé Cerba, et Check-Up ; pour les autres laboratoires, vous saisissez ou corrigez les valeurs vous-même.
 - **Suivre l'évolution de vos résultats.** « Mon suivi biologique » trace chaque analyse dans le temps, bilan après bilan.
 - **Classer vos autres documents.** Ordonnances, imagerie, comptes rendus de consultation, notes. Pour un compte rendu en PDF, l'application propose l'examen, la date, la conclusion et les médecins ; vous corrigez si besoin.
 - **Tenir votre fiche santé à jour.** Allergies, traitements en cours, vaccinations avec rappel du prochain vaccin, antécédents médicaux, chirurgicaux et familiaux.
@@ -87,6 +87,8 @@ Dans la page **Coffre**, « Rechercher une mise à jour » ouvre le site, qui vo
 Pour mettre à jour, téléchargez la nouvelle version et ouvrez votre coffre avec. **Votre coffre ne change pas** : seul le fichier de l'application est remplacé. Gardez l'ancien fichier quelques jours, puis supprimez-le.
 
 Une ancienne version de l'application peut ne pas savoir lire un coffre enregistré par une version plus récente. Après une mise à jour, utilisez donc toujours la nouvelle.
+
+Une nouvelle version reconnaît parfois des analyses que la précédente laissait de côté. Dans la page **Coffre**, « Relire les bilans » relit les PDF déjà importés et indique les bilans qui ont de nouveaux résultats. Vous les vérifiez avant de les ajouter ; les lignes existantes et vos corrections sont conservées. Pour un seul bilan, « Relire le PDF » fait la même chose depuis « Modifier ».
 
 ## Vérifier le fichier téléchargé
 
