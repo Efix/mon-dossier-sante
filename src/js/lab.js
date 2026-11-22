@@ -203,7 +203,7 @@
     }))
   }
 
-  function row(name, measurement, page, reference = '') {
+  function rowOf(name, measurement, page, reference = '') {
     return {
       name:labelText(name).slice(0, 160), value:measurement.value.slice(0, 240), unit:measurement.unit.slice(0, 60),
       page, reference:reference.slice(0, 600), date:'',
@@ -236,6 +236,18 @@
   // Libellés de technique d'analyse : jamais une analyse, parfois la ligne qui porte la valeur.
   const methodLine = /^(?:impedance|photometrie|cytometrie|colorimetrie|spectrophotometrie|turbidimetrie|immunoturbidimetrie|nephelometrie|enzymatique|chimiluminescence|electrochimiluminescence|potentiometrie|electrode|methode|technique)(?: |$)/
 
+  // Titres de section des comptes rendus Cerballiance. Une section d'urines ne se termine qu'au titre d'une
+  // autre section : les en-têtes de page (laboratoire, patient) ne doivent pas y mettre fin.
+  const urineSection = /^(?:biochimie (?:des urines|urinaire)|analyse d urines|cytologie urinaire|chimie urinaire|ionogramme urinaire|examen cytobacteriologique|ecbu)(?: |$)/
+  const otherSection = new RegExp('^(?:' + [
+    'biochimie(?: (?:generale|du sang|sanguine|plasmatique|specialisee))?$', 'hematologie', 'hemostase', 'coagulation',
+    'immunologie', 'immuno ?hematologie', 'auto ?immunite', 'allergologie', 'hormonologie', 'hormones', 'endocrinologie',
+    'serologies?', 'virologie', 'infectiologie', 'enzymologie', 'marqueurs', 'vitamines', 'oligo ?elements', 'proteines',
+    'electrophorese', 'exploration', 'bilan', 'lipides', 'metabolisme', 'toxicologie', 'pharmacologie', 'suivi therapeutique',
+    'examens transmis', 'gaz du sang',
+  ].join('|') + ')(?: |$)')
+  const sectionEnds = heading => !/urin|ecbu/.test(heading) && otherSection.test(heading)
+
   function parseCerballiance(pages) {
     const rows = []
     const dates = new Set()
@@ -245,6 +257,9 @@
     // Une section d'urines peut se poursuivre sur la page suivante : l'état survit au saut de page.
     let urine = false
     let urineSkipped = 0
+    // Chaque résultat garde la date du prélèvement qui le précède : deux dates, deux résultats distincts.
+    let collected = ''
+    const row = (...args) => ({...rowOf(...args), date:collected})
     for (const {number:page, lines} of pages) {
       let previous = null
       let last = -10
@@ -253,10 +268,13 @@
       for (const [index, raw] of lines.entries()) {
         const line = clean(raw)
         const date = dateISO(accentless(line).match(collectionFR)?.[1])
-        if (date) dates.add(date)
+        if (date) {
+          dates.add(date)
+          collected = date
+        }
         const heading = fold(line)
-        if (/^(?:biochimie (?:des urines|urinaire)|analyse d urines|cytologie urinaire|chimie urinaire)(?: |$)/.test(heading)) urine = true
-        if (/^(?:biochimie (?:du sang|sanguine)|hematologie|hemostase|immunologie|hormonologie|serologie|enzymologie|endocrinologie|marqueurs|vitamines)(?: |$)/.test(heading)) urine = false
+        if (urineSection.test(heading)) urine = true
+        else if (sectionEnds(heading)) urine = false
         if (!line) continue
         const items = measures(line)
         if (urine) {
@@ -338,16 +356,19 @@
     let urine = false
     let urineSkipped = 0
     let unnamed = 0
+    const row = rowOf
+    // Un examen peut commencer en bas d'une page et finir sur la suivante, avec sa date de collecte :
+    // l'analyse en cours et les résultats qui attendent leur date survivent au saut de page.
+    let label = ''
+    let active = null
+    let references = false
+    let pending = []
+    const add = item => {
+      rows.push(item)
+      pending.push(item)
+      return item
+    }
     for (const {number:page, lines} of pages) {
-      let label = ''
-      let active = null
-      let references = false
-      let pending = []
-      const add = item => {
-        rows.push(item)
-        pending.push(item)
-        return item
-      }
       for (const raw of lines) {
         const line = clean(raw)
         if (!line) continue

@@ -84,6 +84,48 @@ test('urines Cerballiance : un titre de section sanguine y met fin', () => {
   assert.deepEqual(lignes(bilan), [['Sodium', '140', 'mmol/L', '', '', 2]])
 })
 
+test('urines Cerballiance : toute autre section y met fin, pas les en-têtes de page', () => {
+  for (const titre of ['EXPLORATION D’UNE ANOMALIE LIPIDIQUE', 'AUTO-IMMUNITÉ', 'EXAMENS TRANSMIS', 'BIOCHIMIE', 'SÉROLOGIES', 'VITAMINES ET OLIGO-ÉLÉMENTS']) {
+    const bilan = lire([
+      'Cerballiance', 'Prélevé le 12/03/2026', 'BIOCHIMIE URINAIRE', 'Créatinine\t12,5 mmol/L', '\f',
+      'LABORATOIRE FICTIF DE BIOLOGIE', 'MME PATIENTE FICTIVE', 'Sodium\t95 mmol/L', titre, 'Sodium\t140 mmol/L',
+    ])
+    assert.deepEqual(lignes(bilan), [['Sodium', '140', 'mmol/L', '', '', 2]], titre)
+    assert.equal(bilan.urineSkipped, 2, titre)
+  }
+  const ionogramme = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'IONOGRAMME URINAIRE', 'Sodium\t95 mmol/L', 'BILAN LIPIDIQUE', 'Sodium\t140 mmol/L'])
+  assert.deepEqual(lignes(ionogramme), [['Sodium', '140', 'mmol/L', '', '', 1]])
+})
+
+test('deux dates de prélèvement : le même résultat est gardé pour chacune', () => {
+  const cerballiance = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'Glucose\t5,0 mmol/L', '\f', 'Prélevé le 13/03/2026', 'Glucose\t5,0 mmol/L', 'Glucose\t5,0 mmol/L'])
+  assert.equal(cerballiance.multipleDates, true)
+  assert.deepEqual(lignes(cerballiance), [
+    ['Glucose', '5,0', 'mmol/L', '', '2026-03-12', 1],
+    ['Glucose', '5,0', 'mmol/L', '', '2026-03-13', 2],
+  ], 'le doublon d’une même date reste écarté')
+  const checkup = lire([
+    'CHECK UP LABORATORIO', 'VDRL', 'Resultado: Não reagente', 'Data da coleta: 05/02/2026',
+    'VDRL', 'Resultado: Não reagente', 'Data da coleta: 06/02/2026',
+  ])
+  assert.deepEqual(lignes(checkup), [
+    ['VDRL', 'Não reagente', '', '', '2026-02-05', 1],
+    ['VDRL', 'Não reagente', '', '', '2026-02-06', 1],
+  ])
+})
+
+test('Check-Up : un examen coupé par un saut de page garde sa valeur et sa date', () => {
+  const bilan = lire([
+    'CHECK UP LABORATORIO', 'CREATININA', 'Material: Soro', '\f',
+    'CHECK UP LABORATORIO', 'Resultado: 0,9 mg/dL', 'V.R.: 0,7 a 1,2 mg/dL', 'Data da coleta: 05/02/2026',
+    'GLICOSE', 'Resultado: 90 mg/dL', '\f', 'CHECK UP LABORATORIO', 'Data da coleta: 06/02/2026',
+  ])
+  assert.deepEqual(lignes(bilan), [
+    ['CREATININA', '0,9', 'mg/dL', '0,7 a 1,2 mg/dL', '2026-02-05', 2],
+    ['GLICOSE', '90', 'mg/dL', '', '2026-02-06', 2],
+  ])
+})
+
 test('urines Check-Up : l’examen s’arrête à sa date de collecte, même sur deux pages', () => {
   const bilan = lire([
     'CHECK UP LABORATORIO', 'ROTINA DE URINA', 'Leucócitos 3.000 /mL', '\f', 'Hemácias 2.000 /mL', 'Data da coleta: 05/02/2026',

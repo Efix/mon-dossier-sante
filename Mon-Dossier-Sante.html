@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Oj7OhG2BqgUXDaXVx7Rc1TsSse6LyFjZP4CMc3hx8XU=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-CBt2iqfnYYSSfL6rBPHFwrrVjP1C2Skg0mI4vHpfUEw=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta name="application-version" content="1.2.1">
@@ -931,7 +931,7 @@ dialog::backdrop { background: #0d201fb3; }
     }))
   }
 
-  function row(name, measurement, page, reference = '') {
+  function rowOf(name, measurement, page, reference = '') {
     return {
       name:labelText(name).slice(0, 160), value:measurement.value.slice(0, 240), unit:measurement.unit.slice(0, 60),
       page, reference:reference.slice(0, 600), date:'',
@@ -964,6 +964,18 @@ dialog::backdrop { background: #0d201fb3; }
   // Libellés de technique d'analyse : jamais une analyse, parfois la ligne qui porte la valeur.
   const methodLine = /^(?:impedance|photometrie|cytometrie|colorimetrie|spectrophotometrie|turbidimetrie|immunoturbidimetrie|nephelometrie|enzymatique|chimiluminescence|electrochimiluminescence|potentiometrie|electrode|methode|technique)(?: |$)/
 
+  // Titres de section des comptes rendus Cerballiance. Une section d'urines ne se termine qu'au titre d'une
+  // autre section : les en-têtes de page (laboratoire, patient) ne doivent pas y mettre fin.
+  const urineSection = /^(?:biochimie (?:des urines|urinaire)|analyse d urines|cytologie urinaire|chimie urinaire|ionogramme urinaire|examen cytobacteriologique|ecbu)(?: |$)/
+  const otherSection = new RegExp('^(?:' + [
+    'biochimie(?: (?:generale|du sang|sanguine|plasmatique|specialisee))?$', 'hematologie', 'hemostase', 'coagulation',
+    'immunologie', 'immuno ?hematologie', 'auto ?immunite', 'allergologie', 'hormonologie', 'hormones', 'endocrinologie',
+    'serologies?', 'virologie', 'infectiologie', 'enzymologie', 'marqueurs', 'vitamines', 'oligo ?elements', 'proteines',
+    'electrophorese', 'exploration', 'bilan', 'lipides', 'metabolisme', 'toxicologie', 'pharmacologie', 'suivi therapeutique',
+    'examens transmis', 'gaz du sang',
+  ].join('|') + ')(?: |$)')
+  const sectionEnds = heading => !/urin|ecbu/.test(heading) && otherSection.test(heading)
+
   function parseCerballiance(pages) {
     const rows = []
     const dates = new Set()
@@ -973,6 +985,9 @@ dialog::backdrop { background: #0d201fb3; }
     // Une section d'urines peut se poursuivre sur la page suivante : l'état survit au saut de page.
     let urine = false
     let urineSkipped = 0
+    // Chaque résultat garde la date du prélèvement qui le précède : deux dates, deux résultats distincts.
+    let collected = ''
+    const row = (...args) => ({...rowOf(...args), date:collected})
     for (const {number:page, lines} of pages) {
       let previous = null
       let last = -10
@@ -981,10 +996,13 @@ dialog::backdrop { background: #0d201fb3; }
       for (const [index, raw] of lines.entries()) {
         const line = clean(raw)
         const date = dateISO(accentless(line).match(collectionFR)?.[1])
-        if (date) dates.add(date)
+        if (date) {
+          dates.add(date)
+          collected = date
+        }
         const heading = fold(line)
-        if (/^(?:biochimie (?:des urines|urinaire)|analyse d urines|cytologie urinaire|chimie urinaire)(?: |$)/.test(heading)) urine = true
-        if (/^(?:biochimie (?:du sang|sanguine)|hematologie|hemostase|immunologie|hormonologie|serologie|enzymologie|endocrinologie|marqueurs|vitamines)(?: |$)/.test(heading)) urine = false
+        if (urineSection.test(heading)) urine = true
+        else if (sectionEnds(heading)) urine = false
         if (!line) continue
         const items = measures(line)
         if (urine) {
@@ -1066,16 +1084,19 @@ dialog::backdrop { background: #0d201fb3; }
     let urine = false
     let urineSkipped = 0
     let unnamed = 0
+    const row = rowOf
+    // Un examen peut commencer en bas d'une page et finir sur la suivante, avec sa date de collecte :
+    // l'analyse en cours et les résultats qui attendent leur date survivent au saut de page.
+    let label = ''
+    let active = null
+    let references = false
+    let pending = []
+    const add = item => {
+      rows.push(item)
+      pending.push(item)
+      return item
+    }
     for (const {number:page, lines} of pages) {
-      let label = ''
-      let active = null
-      let references = false
-      let pending = []
-      const add = item => {
-        rows.push(item)
-        pending.push(item)
-        return item
-      }
       for (const raw of lines) {
         const line = clean(raw)
         if (!line) continue
@@ -2102,11 +2123,16 @@ dialog::backdrop { background: #0d201fb3; }
     return item
   }
   const option = (key, label) => new Option(label, key)
-  const notice = (id, message = '', kind = '') => {
+  // `action` : {label, run}, un bouton à la suite du message ; il disparaît avec lui.
+  const notice = (id, message = '', kind = '', action = null) => {
     const target = $(id)
     target.hidden = !message
     target.className = kind ? 'notice ' + kind : 'notice'
     target.textContent = message
+    if (message && action) target.append(' ', button(action.label, () => {
+      notice(id)
+      action.run()
+    }, 'link-button'))
   }
   const vaultTypes = [{description:'Coffre Mon dossier santé', accept:{'application/octet-stream':['.sante']}}]
   const dater = new Intl.DateTimeFormat('fr-FR', {dateStyle:'medium', timeZone:'UTC'})
@@ -2178,8 +2204,10 @@ dialog::backdrop { background: #0d201fb3; }
     if (!session) return
     const label = $('disk-state')
     label.classList.toggle('pending', session.dirty)
-    label.textContent = session.dirty ? 'Modifications à enregistrer' : 'Coffre enregistré'
-    $('save-vault').disabled = busy || !session.dirty
+    // Un téléchargement peut avoir été annulé, et la page ne peut pas le savoir : il n'est pas annoncé
+    // comme enregistré, et le bouton reste actif pour télécharger de nouveau.
+    label.textContent = session.dirty ? 'Modifications à enregistrer' : session.downloaded ? 'Coffre téléchargé, à vérifier' : 'Coffre enregistré'
+    $('save-vault').disabled = busy || !(session.dirty || session.downloaded)
     $('lock-vault').disabled = busy
   }
 
@@ -2297,7 +2325,7 @@ dialog::backdrop { background: #0d201fb3; }
         if (!selected) throw Error('Sélectionnez un coffre.')
         const loaded = await Coffre.open(selected.blob, passphrase)
         session = {
-          ...loaded, handle:selected.handle, dirty:selected.dirty, current:selected.blob,
+          ...loaded, handle:selected.handle, dirty:selected.dirty, downloaded:Boolean(selected.downloaded), current:selected.blob,
           header:selected.dirty ? selected.header : loaded.header,
         }
       }
@@ -2321,9 +2349,10 @@ dialog::backdrop { background: #0d201fb3; }
   })
 
   // Renvoie true si le coffre a été écrit ou téléchargé. `auto` : enregistrement déclenché par une
-  // modification ; `rekey` : nouvelle clé, adoptée seulement si l'écriture réussit ; `prefix` : début du message.
-  async function save({copy = false, forceDownload = false, auto = false, rekey = null, prefix = ''} = {}) {
-    if (busy || !session || (!session.dirty && !copy && !rekey)) return false
+  // modification ; `rekey` : nouvelle clé, adoptée seulement si l'écriture réussit ; `prefix` : début du message ;
+  // `action` : bouton joint au message (« Annuler »).
+  async function save({copy = false, forceDownload = false, auto = false, rekey = null, prefix = '', action = null} = {}) {
+    if (busy || !session || (!session.dirty && !session.downloaded && !copy && !rekey)) return false
     busy = true
     refreshStatus()
     const say = (...parts) => parts.filter(Boolean).join(' ')
@@ -2352,22 +2381,22 @@ dialog::backdrop { background: #0d201fb3; }
       // Une copie téléchargée ne remplace le coffre de travail que si aucun fichier n'est ouvert :
       // sinon le fichier d'origine resterait périmé tout en paraissant enregistré.
       const adopted = !copy || sameFile || (session.dirty && !handle && !session.handle)
-      if (adopted) session = {...session, key, salt, handle, header:sealed.header, dirty:false, current:sealed.blob}
+      if (adopted) session = {...session, key, salt, handle, header:sealed.header, dirty:false, downloaded:!handle, current:sealed.blob}
       const message = handle ? (copy && !sameFile ? 'Copie chiffrée enregistrée.' : 'Coffre enregistré.') :
-        adopted ? 'Fichier .sante chiffré téléchargé. Utilisez cette version à la prochaine ouverture.' :
+        adopted ? 'Fichier .sante chiffré téléchargé : vérifiez qu’il figure dans vos téléchargements, et utilisez cette version à la prochaine ouverture. Si le téléchargement a été annulé, cliquez de nouveau sur « Enregistrer le coffre ».' :
         session.dirty ? 'Copie chiffrée téléchargée avec vos modifications en cours. Le fichier du coffre ouvert reste à enregistrer.' :
         'Copie chiffrée téléchargée.'
       // Une écriture réussie dans le fichier du coffre lève la suspension de l'enregistrement automatique.
       const resumed = autosaveSuspended && adopted && Boolean(handle)
       if (resumed) autosaveSuspended = false
-      notice('app-message', say(prefix, message, resumed && autosave && 'L’enregistrement automatique reprend.'))
+      notice('app-message', say(prefix, message, resumed && autosave && 'L’enregistrement automatique reprend.'), '', action)
       if (view === 'vault') renderVault()
       return true
     } catch (error) {
       if (rekey) throw error
       if (auto) autosaveSuspended = true
       notice('app-message', say(prefix, error.message,
-        auto && 'L’enregistrement automatique est suspendu : utilisez « Enregistrer le coffre ».'), 'error')
+        auto && 'L’enregistrement automatique est suspendu : utilisez « Enregistrer le coffre ».'), 'error', action)
       if (auto && view === 'vault') renderVault()
       return false
     } finally {
@@ -2379,11 +2408,11 @@ dialog::backdrop { background: #0d201fb3; }
   }
 
   // Après chaque modification du dossier : écriture immédiate si le coffre est lié à un fichier.
-  function afterChange(text) {
+  function afterChange(text, action = null) {
     session.dirty = true
     refreshStatus()
-    if (autosave && !autosaveSuspended && session.handle) void save({auto:true, prefix:text})
-    else notice('app-message', text + ' Enregistrez le coffre pour conserver cette modification.')
+    if (autosave && !autosaveSuspended && session.handle) void save({auto:true, prefix:text, action})
+    else notice('app-message', text + ' Enregistrez le coffre pour conserver cette modification.', '', action)
   }
 
   async function lock() {
@@ -2397,7 +2426,7 @@ dialog::backdrop { background: #0d201fb3; }
     refreshStatus()
     try {
       const blob = session.dirty ? (await Coffre.seal(session.key, session.salt, session.records)).blob : session.current
-      lockedCopy = {blob, handle:session.handle, header:session.header, dirty:session.dirty}
+      lockedCopy = {blob, handle:session.handle, header:session.header, dirty:session.dirty, downloaded:session.downloaded}
       clearTimeout(timer)
       if ($('editor').open) $('editor').close()
       if ($('record').open) $('record').close()
@@ -3372,13 +3401,29 @@ dialog::backdrop { background: #0d201fb3; }
     const controls = $('record-actions')
     controls.replaceChildren(button('Retirer du dossier', () => {
       if (busy || !confirm('Retirer « ' + record.title + ' » du dossier ?')) return
+      const position = session.records.indexOf(record)
       session.records = session.records.filter(item => item.id !== record.id)
       $('record').close()
       show(view)
-      afterChange('Document retiré.')
+      // Avec l'enregistrement automatique, le retrait est aussitôt écrit : le message propose de l'annuler.
+      // Le message, et son bouton, disparaissent au verrouillage : l'annulation vise toujours ce coffre.
+      const undo = {label:'Annuler le retrait', run:() => {
+        if (!session || session.records.some(item => item.id === record.id)) return
+        if (busy) {
+          notice('app-message', 'Enregistrement en cours. Réessayez dans un instant.', 'warn', undo)
+          return
+        }
+        session.records.splice(position < 0 ? session.records.length : Math.min(position, session.records.length), 0, record)
+        show(view)
+        afterChange('Retrait annulé : « ' + record.title + ' » est de retour dans le dossier.')
+      }}
+      afterChange('Document retiré.', undo)
     }, 'text-button danger'))
     if (record.file) controls.append(button('Télécharger l’original', () => {
       download(new Blob([record.file.bytes], {type:'application/octet-stream'}), record.file.name)
+      // L'original sort du coffre en clair : on le signale, sans confirmation à chaque fois.
+      const hint = $('record-body').querySelector('.original-hint') ?? $('record-body').appendChild(el('p', 'notice warn original-hint'))
+      hint.textContent = 'Copie non chiffrée enregistrée dans vos téléchargements. Supprimez-la quand vous n’en avez plus besoin.'
     }))
     if (viewable) controls.append(button('Afficher l’original', () => { void openViewer(record) }))
     controls.append(button('Modifier', () => {

@@ -21,11 +21,16 @@
     return item
   }
   const option = (key, label) => new Option(label, key)
-  const notice = (id, message = '', kind = '') => {
+  // `action` : {label, run}, un bouton à la suite du message ; il disparaît avec lui.
+  const notice = (id, message = '', kind = '', action = null) => {
     const target = $(id)
     target.hidden = !message
     target.className = kind ? 'notice ' + kind : 'notice'
     target.textContent = message
+    if (message && action) target.append(' ', button(action.label, () => {
+      notice(id)
+      action.run()
+    }, 'link-button'))
   }
   const vaultTypes = [{description:'Coffre Mon dossier santé', accept:{'application/octet-stream':['.sante']}}]
   const dater = new Intl.DateTimeFormat('fr-FR', {dateStyle:'medium', timeZone:'UTC'})

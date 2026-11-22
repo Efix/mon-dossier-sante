@@ -117,7 +117,7 @@ Importez le PDF comme bilan : il est conservé dans le coffre, et vous saisissez
 Oui : copiez le fichier `.sante` et l'application sur l'autre ordinateur. Mais il n'y a pas de synchronisation : si vous modifiez les deux copies, elles divergent. Travaillez sur une seule à la fois.
 
 **Que se passe-t-il si je ferme le navigateur sans enregistrer ?**
-Avec Edge ou Chrome, chaque modification est enregistrée dans le fichier aussitôt faite. Avec un autre navigateur, l'application vous prévient tant qu'une modification n'a pas été téléchargée.
+Avec Edge ou Chrome, chaque modification est enregistrée dans le fichier aussitôt faite. Avec un autre navigateur, l'application vous prévient tant qu'une modification n'a pas été téléchargée. Après le téléchargement, elle affiche « Coffre téléchargé, à vérifier » : elle ne peut pas savoir si vous l'avez annulé. Vérifiez que le fichier est bien dans vos téléchargements ; sinon, cliquez de nouveau sur « Enregistrer le coffre ».
 
 **Faut-il faire confiance à la version en ligne ?**
 Elle est identique à la version téléchargeable. Mais à chaque visite, votre navigateur la reçoit à nouveau du site. Le fichier téléchargé, lui, ne change plus une fois vérifié : c'est l'usage recommandé pour un dossier de santé.

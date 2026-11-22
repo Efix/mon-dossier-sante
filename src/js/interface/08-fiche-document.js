@@ -42,13 +42,29 @@
     const controls = $('record-actions')
     controls.replaceChildren(button('Retirer du dossier', () => {
       if (busy || !confirm('Retirer « ' + record.title + ' » du dossier ?')) return
+      const position = session.records.indexOf(record)
       session.records = session.records.filter(item => item.id !== record.id)
       $('record').close()
       show(view)
-      afterChange('Document retiré.')
+      // Avec l'enregistrement automatique, le retrait est aussitôt écrit : le message propose de l'annuler.
+      // Le message, et son bouton, disparaissent au verrouillage : l'annulation vise toujours ce coffre.
+      const undo = {label:'Annuler le retrait', run:() => {
+        if (!session || session.records.some(item => item.id === record.id)) return
+        if (busy) {
+          notice('app-message', 'Enregistrement en cours. Réessayez dans un instant.', 'warn', undo)
+          return
+        }
+        session.records.splice(position < 0 ? session.records.length : Math.min(position, session.records.length), 0, record)
+        show(view)
+        afterChange('Retrait annulé : « ' + record.title + ' » est de retour dans le dossier.')
+      }}
+      afterChange('Document retiré.', undo)
     }, 'text-button danger'))
     if (record.file) controls.append(button('Télécharger l’original', () => {
       download(new Blob([record.file.bytes], {type:'application/octet-stream'}), record.file.name)
+      // L'original sort du coffre en clair : on le signale, sans confirmation à chaque fois.
+      const hint = $('record-body').querySelector('.original-hint') ?? $('record-body').appendChild(el('p', 'notice warn original-hint'))
+      hint.textContent = 'Copie non chiffrée enregistrée dans vos téléchargements. Supprimez-la quand vous n’en avez plus besoin.'
     }))
     if (viewable) controls.append(button('Afficher l’original', () => { void openViewer(record) }))
     controls.append(button('Modifier', () => {

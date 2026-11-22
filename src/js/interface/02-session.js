@@ -17,8 +17,10 @@
     if (!session) return
     const label = $('disk-state')
     label.classList.toggle('pending', session.dirty)
-    label.textContent = session.dirty ? 'Modifications à enregistrer' : 'Coffre enregistré'
-    $('save-vault').disabled = busy || !session.dirty
+    // Un téléchargement peut avoir été annulé, et la page ne peut pas le savoir : il n'est pas annoncé
+    // comme enregistré, et le bouton reste actif pour télécharger de nouveau.
+    label.textContent = session.dirty ? 'Modifications à enregistrer' : session.downloaded ? 'Coffre téléchargé, à vérifier' : 'Coffre enregistré'
+    $('save-vault').disabled = busy || !(session.dirty || session.downloaded)
     $('lock-vault').disabled = busy
   }
 
@@ -136,7 +138,7 @@
         if (!selected) throw Error('Sélectionnez un coffre.')
         const loaded = await Coffre.open(selected.blob, passphrase)
         session = {
-          ...loaded, handle:selected.handle, dirty:selected.dirty, current:selected.blob,
+          ...loaded, handle:selected.handle, dirty:selected.dirty, downloaded:Boolean(selected.downloaded), current:selected.blob,
           header:selected.dirty ? selected.header : loaded.header,
         }
       }
@@ -160,9 +162,10 @@
   })
 
   // Renvoie true si le coffre a été écrit ou téléchargé. `auto` : enregistrement déclenché par une
-  // modification ; `rekey` : nouvelle clé, adoptée seulement si l'écriture réussit ; `prefix` : début du message.
-  async function save({copy = false, forceDownload = false, auto = false, rekey = null, prefix = ''} = {}) {
-    if (busy || !session || (!session.dirty && !copy && !rekey)) return false
+  // modification ; `rekey` : nouvelle clé, adoptée seulement si l'écriture réussit ; `prefix` : début du message ;
+  // `action` : bouton joint au message (« Annuler »).
+  async function save({copy = false, forceDownload = false, auto = false, rekey = null, prefix = '', action = null} = {}) {
+    if (busy || !session || (!session.dirty && !session.downloaded && !copy && !rekey)) return false
     busy = true
     refreshStatus()
     const say = (...parts) => parts.filter(Boolean).join(' ')
@@ -191,22 +194,22 @@
       // Une copie téléchargée ne remplace le coffre de travail que si aucun fichier n'est ouvert :
       // sinon le fichier d'origine resterait périmé tout en paraissant enregistré.
       const adopted = !copy || sameFile || (session.dirty && !handle && !session.handle)
-      if (adopted) session = {...session, key, salt, handle, header:sealed.header, dirty:false, current:sealed.blob}
+      if (adopted) session = {...session, key, salt, handle, header:sealed.header, dirty:false, downloaded:!handle, current:sealed.blob}
       const message = handle ? (copy && !sameFile ? 'Copie chiffrée enregistrée.' : 'Coffre enregistré.') :
-        adopted ? 'Fichier .sante chiffré téléchargé. Utilisez cette version à la prochaine ouverture.' :
+        adopted ? 'Fichier .sante chiffré téléchargé : vérifiez qu’il figure dans vos téléchargements, et utilisez cette version à la prochaine ouverture. Si le téléchargement a été annulé, cliquez de nouveau sur « Enregistrer le coffre ».' :
         session.dirty ? 'Copie chiffrée téléchargée avec vos modifications en cours. Le fichier du coffre ouvert reste à enregistrer.' :
         'Copie chiffrée téléchargée.'
       // Une écriture réussie dans le fichier du coffre lève la suspension de l'enregistrement automatique.
       const resumed = autosaveSuspended && adopted && Boolean(handle)
       if (resumed) autosaveSuspended = false
-      notice('app-message', say(prefix, message, resumed && autosave && 'L’enregistrement automatique reprend.'))
+      notice('app-message', say(prefix, message, resumed && autosave && 'L’enregistrement automatique reprend.'), '', action)
       if (view === 'vault') renderVault()
       return true
     } catch (error) {
       if (rekey) throw error
       if (auto) autosaveSuspended = true
       notice('app-message', say(prefix, error.message,
-        auto && 'L’enregistrement automatique est suspendu : utilisez « Enregistrer le coffre ».'), 'error')
+        auto && 'L’enregistrement automatique est suspendu : utilisez « Enregistrer le coffre ».'), 'error', action)
       if (auto && view === 'vault') renderVault()
       return false
     } finally {
@@ -218,11 +221,11 @@
   }
 
   // Après chaque modification du dossier : écriture immédiate si le coffre est lié à un fichier.
-  function afterChange(text) {
+  function afterChange(text, action = null) {
     session.dirty = true
     refreshStatus()
-    if (autosave && !autosaveSuspended && session.handle) void save({auto:true, prefix:text})
-    else notice('app-message', text + ' Enregistrez le coffre pour conserver cette modification.')
+    if (autosave && !autosaveSuspended && session.handle) void save({auto:true, prefix:text, action})
+    else notice('app-message', text + ' Enregistrez le coffre pour conserver cette modification.', '', action)
   }
 
   async function lock() {
@@ -236,7 +239,7 @@
     refreshStatus()
     try {
       const blob = session.dirty ? (await Coffre.seal(session.key, session.salt, session.records)).blob : session.current
-      lockedCopy = {blob, handle:session.handle, header:session.header, dirty:session.dirty}
+      lockedCopy = {blob, handle:session.handle, header:session.header, dirty:session.dirty, downloaded:session.downloaded}
       clearTimeout(timer)
       if ($('editor').open) $('editor').close()
       if ($('record').open) $('record').close()
