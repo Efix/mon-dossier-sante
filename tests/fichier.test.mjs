@@ -4,8 +4,8 @@ import assert from 'node:assert/strict'
 import crypto from 'node:crypto'
 import fs from 'node:fs'
 import {lireApplication} from './charger.mjs'
-import {assembler} from '../outils/assembler.mjs'
-import {sources} from '../outils/application.mjs'
+import {assembler, verifierScript} from '../outils/assembler.mjs'
+import {sources, defautsCsp} from '../outils/application.mjs'
 
 const {html, scripts, csp, empreinte} = lireApplication()
 
@@ -37,4 +37,35 @@ test('la CSP interdit toute connexion réseau', () => {
   assert.match(regle, /default-src 'none'/)
   assert.match(regle, /connect-src 'none'/)
   assert.doesNotMatch(regle, /https?:/)
+})
+
+test('la garde de publication n’accepte que les directives CSP prévues, sans aucune source extérieure', () => {
+  const regle = html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1]
+  assert.deepEqual(defautsCsp(regle), [])
+  for (const csp of [
+    "default-src 'none'; connect-src 'none'; img-src *",
+    "default-src 'none'; connect-src 'none'; script-src 'unsafe-inline'",
+    "default-src 'none'; connect-src 'none'; font-src data:",
+    "default-src 'none'; connect-src 'none'; style-src 'unsafe-inline' //hote.exemple",
+    "default-src 'none'; connect-src 'none'; form-action 'self'",
+    "default-src 'none'; connect-src 'none'; connect-src *",
+    "default-src *; connect-src 'none'",
+    "default-src 'none'",
+  ]) assert.notDeepEqual(defautsCsp(csp), [], csp)
+})
+
+test('l’assemblage refuse « </script », quelle que soit sa casse', () => {
+  for (const script of ['a = "</script>"', 'a = "</SCRIPT>"', '// </Script >']) assert.throws(() => verifierScript(script), /<\/script/)
+  assert.doesNotThrow(() => verifierScript('a = "<\\/script>"'))
+})
+
+test('aucune écriture de HTML ni exécution de texte dans le code de l’application', () => {
+  const dangereux = /\.(?:innerHTML|outerHTML)\s*[+]?=|insertAdjacentHTML|document\.write|\beval\s*\(|new\s+Function\s*\(|set(?:Timeout|Interval)\s*\(\s*['"`]|\bsrcdoc\b/
+  const dossiers = ['js/', 'js/interface/']
+  for (const dossier of dossiers) {
+    for (const nom of fs.readdirSync(new URL(dossier, sources)).filter(nom => nom.endsWith('.js'))) {
+      const code = fs.readFileSync(new URL(dossier + nom, sources), 'utf8')
+      assert.doesNotMatch(code, dangereux, dossier + nom)
+    }
+  }
 })

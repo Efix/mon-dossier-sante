@@ -203,3 +203,26 @@ test('relevé de mesures : aller-retour, format 2, valeurs mal formées refusée
   }
   assert.throws(() => Coffre.check({...releve, fields:{poids:'72'}}), 'champ inconnu')
 })
+
+test('phrase secrète accentuée : le coffre s’ouvre quelle que soit sa forme Unicode (NFC ou NFD)', async () => {
+  const nfc = 'phrase très sûre à Noël 2026'.normalize('NFC')
+  const nfd = nfc.normalize('NFD')
+  assert.notEqual(nfc, nfd)
+  const s = Coffre.freshSalt()
+  // Coffre créé par cette version, phrase saisie sous forme décomposée (clavier macOS, copier-coller).
+  const neuf = await Coffre.seal(await Coffre.derive(nfd, s), s, dossier())
+  assert.equal((await Coffre.open(neuf.blob, nfc)).records.length, 2)
+  assert.equal((await Coffre.open(neuf.blob, nfd)).records.length, 2)
+  // Coffre d'une version antérieure : clé dérivée des octets saisis, sans normalisation.
+  const brute = await crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt:s, iterations:600000, hash:'SHA-256'},
+    await crypto.subtle.importKey('raw', new TextEncoder().encode(nfd), 'PBKDF2', false, ['deriveKey']),
+    {name:'AES-GCM', length:256}, false, ['encrypt', 'decrypt'])
+  const ancien = await Coffre.seal(brute, s, dossier())
+  assert.equal((await Coffre.open(ancien.blob, nfd)).records.length, 2)
+  assert.equal((await Coffre.open(ancien.blob, nfc)).records.length, 2, 'saisie NFC d’une phrase créée en NFD')
+  // Vérification de la phrase actuelle (changement de phrase secrète).
+  assert.equal(await Coffre.verify(brute, nfc, s), true)
+  assert.equal(await Coffre.verify(brute, 'une autre phrase de test', s), false)
+  await assert.rejects(Coffre.open(ancien.blob, 'une autre phrase de test'), /Phrase secrète incorrecte/)
+})

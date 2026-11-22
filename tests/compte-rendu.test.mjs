@@ -110,3 +110,24 @@ test('document sans rien de reconnaissable : aucune proposition', () => {
   // « Avis » en début de phrase n'est pas un titre de section.
   assert.equal(lire(['ECHOGRAPHIE ABDOMINALE', 'Avis favorable pour une reprise du sport après contrôle.']).fields.conclusion, undefined)
 })
+
+test('en-tête sur deux colonnes : l’identité du patient voisine d’un médecin ou d’un lieu n’est jamais reprise', () => {
+  // La lecture du PDF sépare les colonnes d'une même ligne par une tabulation.
+  const colonnes = lire([
+    'CABINET DE RADIOLOGIE DU PARC\tPatient : Mme Anne EXEMPLE',
+    'Médecin traitant : Dr Paul MARTIN\tNée le 12/05/1970 – NIR 2700512345678',
+    'SCANNER THORACIQUE',
+    'CONCLUSION : Examen normal.',
+    'Dr Claire PETIT\tIPP 123456',
+  ])
+  assert.equal(colonnes.fields.place, 'CABINET DE RADIOLOGIE DU PARC')
+  assert.equal(colonnes.fields.prescriber, 'Dr Paul MARTIN')
+  assert.equal(colonnes.fields.practitioner, 'Dr Claire PETIT')
+  // Colonnes trop proches pour être séparées : la mention du patient arrête le nom du médecin.
+  const accolees = lire(['SCANNER THORACIQUE', 'Prescrit par Dr Luc BERNARD Patient : M. Jean EXEMPLE, né le 12/05/1970'])
+  assert.equal(accolees.fields.prescriber, 'Dr Luc BERNARD')
+  const texte = JSON.stringify([colonnes, accolees])
+  for (const identite of ['EXEMPLE', 'Anne', 'Jean', '1970', '2700512345678', '123456']) {
+    assert.equal(texte.includes(identite), false, identite + ' ne doit jamais être repris')
+  }
+})

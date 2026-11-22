@@ -14,7 +14,7 @@ import crypto from 'node:crypto'
 import {execFileSync} from 'node:child_process'
 import {fileURLToPath} from 'node:url'
 
-import {fichier, depot} from './application.mjs'
+import {fichier, depot, defautsCsp} from './application.mjs'
 import {pageAccueil} from './accueil.mjs'
 
 const racine = fileURLToPath(new URL('../', import.meta.url))
@@ -59,8 +59,9 @@ for (const tag of tags) {
   const texte = html.toString('utf8')
   // Garde-fous : une version publiée doit s'interdire tout réseau et ne pas dépendre d'une ressource extérieure.
   const csp = texte.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)?.[1] ?? ''
-  if (!/connect-src 'none'/.test(csp) || !/default-src 'none'/.test(csp) || /https?:/.test(csp)) {
-    throw Error(`${tag} : la Content-Security-Policy n'interdit pas toute connexion réseau, publication refusée.`)
+  const ecarts = defautsCsp(csp)
+  if (ecarts.length) {
+    throw Error(`${tag} : la Content-Security-Policy n'interdit pas toute connexion réseau (${ecarts.join(' ; ')}), publication refusée.`)
   }
   const empreinte = sha256(html)
   const notee = connues.get(tag)

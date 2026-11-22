@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-3Ztjwh6Jz2Ou6EH+UkxSZsRshOKdEL5y6fdIGGj0FMM=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Oj7OhG2BqgUXDaXVx7Rc1TsSse6LyFjZP4CMc3hx8XU=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta name="application-version" content="1.2.0">
@@ -1290,7 +1290,16 @@ dialog::backdrop { background: #0d201fb3; }
   }
   const freshSalt = () => crypto.getRandomValues(new Uint8Array(16))
 
-  async function derive(passphrase, salt) {
+  // Une lettre accentuée peut s'écrire de deux façons (« é » ou « e » suivi de l'accent) selon le clavier ou le
+  // copier-coller. Une nouvelle clé est toujours dérivée de la forme composée (NFC) ; à l'ouverture, les autres
+  // formes sont aussi essayées : saisie brute (coffres des versions antérieures) et forme décomposée (NFD).
+  const forms = passphrase => [...new Set([passphrase.normalize('NFC'), passphrase, passphrase.normalize('NFD')])]
+
+  function derive(passphrase, salt) {
+    return deriveBytes(passphrase.normalize('NFC'), salt)
+  }
+
+  async function deriveBytes(passphrase, salt) {
     const passBytes = encoder.encode(passphrase)
     try {
       const baseKey = await crypto.subtle.importKey('raw', passBytes, 'PBKDF2', false, ['deriveKey'])
@@ -1426,14 +1435,17 @@ dialog::backdrop { background: #0d201fb3; }
 
   async function open(blob, passphrase) {
     const {header, salt, iv} = await inspect(blob)
-    const key = await derive(passphrase, salt)
     const encrypted = await blob.slice(headerLength).arrayBuffer()
+    let key
     let plaintext
-    try {
-      plaintext = await crypto.subtle.decrypt({name:'AES-GCM', iv, additionalData:header}, key, encrypted)
-    } catch {
-      throw Error('Phrase secrète incorrecte ou coffre endommagé.')
+    for (const form of forms(passphrase)) {
+      key = await deriveBytes(form, salt)
+      try {
+        plaintext = await crypto.subtle.decrypt({name:'AES-GCM', iv, additionalData:header}, key, encrypted)
+        break
+      } catch {}
     }
+    if (!plaintext) throw Error('Phrase secrète incorrecte ou coffre endommagé.')
     try {
       return {key, salt, header, records:unpack(plaintext)}
     } catch {
@@ -1490,6 +1502,12 @@ dialog::backdrop { background: #0d201fb3; }
     }
   }
 
+  // La phrase saisie correspond-elle à la clé du coffre ouvert, sous l'une de ses formes Unicode ?
+  async function verify(key, passphrase, salt) {
+    for (const form of forms(passphrase)) if (await sameKey(key, await deriveBytes(form, salt))) return true
+    return false
+  }
+
   async function attachment(file) {
     if (file.size < 1 || file.size > MAX_DOCUMENT) throw Error('Choisissez un document non vide de 30 Mo maximum.')
     const bytes = new Uint8Array(await file.arrayBuffer())
@@ -1524,7 +1542,7 @@ dialog::backdrop { background: #0d201fb3; }
     }
   }
 
-  globalThis.Coffre = {types, labs, fieldRules, MAX_VAULT, MAX_DOCUMENT, safeName, freshSalt, derive, inspect, open, seal, attachment, isPDF, isImage, writeFile, check, sameKey}
+  globalThis.Coffre = {types, labs, fieldRules, MAX_VAULT, MAX_DOCUMENT, safeName, freshSalt, derive, inspect, open, seal, attachment, isPDF, isImage, writeFile, check, sameKey, verify}
 })()
 
 ;
@@ -1775,17 +1793,29 @@ dialog::backdrop { background: #0d201fb3; }
     return (end > max / 2 ? cut.slice(0, end + 1) : cut).trimEnd() + '…'
   }
 
+  // Ce qui suit une mention du patient dans une même cellule n'est jamais repris (colonnes trop proches pour être séparées).
+  const patientMention = /[\s,;–-]+(?:patiente?|nee? le|date de naissance|nom de naissance|naissance|ddn|nir|ipp|securite sociale|nom\s*:|prenom)\b/
+  const beforePatient = text => {
+    const m = plain(text).match(patientMention)
+    return m ? text.slice(0, m.index) : text
+  }
   const doctor = /^(?:(?:dr|docteur|pr|professeur)\.?\s+)/i
-  const shortDoctor = text => clean(text).replace(doctor, match => /^p/i.test(match) ? 'Pr ' : 'Dr ')
+  const shortDoctor = text => clean(beforePatient(clean(text))).replace(doctor, match => /^p/i.test(match) ? 'Pr ' : 'Dr ')
     .replace(/\s*[-–,]\s*(?:rpps\s*:?\s*)?\d{8,}.*$/i, '').replace(/[.,;:\s]+$/, '')
 
   function read(pages) {
-    const all = pages.flatMap(page => page.lines.map(clean).filter(Boolean))
+    // Chaque ligne garde ses cellules : la lecture du PDF sépare par une tabulation les colonnes d'une même ligne.
+    // Médecins et lieu ne sont cherchés que dans une cellule, jamais dans la colonne voisine (celle du patient).
+    const all = pages.flatMap(page => page.lines.map(raw => ({
+      line:clean(raw), cells:String(raw ?? '').split('\t').map(clean).filter(Boolean),
+    }))).filter(row => row.line)
     if (!all.length) return null
     // Lignes répétées sur plusieurs pages : en-têtes et pieds de page, jamais du contenu.
     const seen = new Map()
     for (const page of pages) for (const line of new Set(page.lines.map(clean))) seen.set(line, (seen.get(line) ?? 0) + 1)
-    const lines = pages.length > 1 ? all.filter(line => seen.get(line) < Math.min(pages.length, 3)) : all
+    const rows = pages.length > 1 ? all.filter(row => seen.get(row.line) < Math.min(pages.length, 3)) : all
+    const lines = rows.map(row => row.line)
+    const cells = rows.flatMap(row => row.cells)
 
     const found = {title:'', kind:'', date:'', fields:{}}
 
@@ -1828,7 +1858,7 @@ dialog::backdrop { background: #0d201fb3; }
     }
 
     // Médecin demandeur.
-    for (const line of lines) {
+    for (const line of cells) {
       const m = plain(line).match(/\b(?:a la demande d[ue]|demande par|adresse(?:e)? par|prescrit(?:e)? par|prescripteur\s*:|medecin prescripteur\s*:|medecin traitant\s*:)\s*/)
       if (!m) continue
       const name = shortDoctor(line.slice(m.index + m[0].length))
@@ -1837,17 +1867,21 @@ dialog::backdrop { background: #0d201fb3; }
 
     // Praticien : la signature (dernier médecin cité) ou, à défaut, celui de l'en-tête.
     const prescriberKey = plain(found.fields.prescriber ?? '').replace(/^dr /, '')
-    const doctors = lines.filter(line => doctor.test(line) && line.length <= 80 && !/demande|adress|prescri|traitant/.test(plain(line)))
+    const doctors = cells.filter(line => doctor.test(line) && line.length <= 80 && !/demande|adress|prescri|traitant/.test(plain(line)))
       .map(shortDoctor).filter(name => name.split(' ').length >= 2 && (!prescriberKey || !plain(name).includes(prescriberKey)))
     if (doctors.length) found.fields.practitioner = doctors.at(-1).slice(0, limits.practitioner)
 
     // Lieu : premier en-tête qui nomme un centre, un cabinet, une clinique… (sur deux lignes si besoin).
-    for (const [index, line] of lines.slice(0, 15).entries()) {
-      if (!/^(?:centre|cabinet|clinique|polyclinique|hopital|ch[ u]|chu|institut|groupe|scm|selarl|imagerie|maison de sante|service)\b/.test(plain(line))) continue
-      let place = line
-      if (/\b(?:de|du|des|d'|d’|de la|et|en|sur|au|aux)$/i.test(place) && lines[index + 1] && !/\d/.test(lines[index + 1])) place += ' ' + lines[index + 1]
-      found.fields.place = place.replace(/[\s.,:;-]+$/, '').slice(0, limits.place)
-      break
+    place: for (const [index, row] of rows.slice(0, 15).entries()) {
+      for (const cell of row.cells) {
+        const line = clean(beforePatient(cell))
+        if (!/^(?:centre|cabinet|clinique|polyclinique|hopital|ch[ u]|chu|institut|groupe|scm|selarl|imagerie|maison de sante|service)\b/.test(plain(line))) continue
+        let place = line
+        const next = rows[index + 1]?.cells[0]
+        if (line === cell && /\b(?:de|du|des|d'|d’|de la|et|en|sur|au|aux)$/i.test(place) && next && !/\d/.test(next)) place += ' ' + clean(beforePatient(next))
+        found.fields.place = place.replace(/[\s.,:;-]+$/, '').slice(0, limits.place)
+        break place
+      }
     }
 
     for (const [key, value] of Object.entries(found.fields)) if (!value) delete found.fields[key]
@@ -2112,6 +2146,8 @@ dialog::backdrop { background: #0d201fb3; }
   let metric = ''
   let unit = ''
   let busy = false
+  // Verrouillage demandé pendant un enregistrement (sélecteur de fichier ouvert) : il a lieu dès la fin de celui-ci.
+  let lockPending = false
   let accessBusy = false
   let timer = null
   let graceUsed = false
@@ -2268,6 +2304,7 @@ dialog::backdrop { background: #0d201fb3; }
       $('access-form').reset()
       pendingOpen = null
       lockedCopy = null
+      lockPending = false
       $('accueil').hidden = true
       $('app').hidden = false
       metric = unit = ''
@@ -2337,6 +2374,7 @@ dialog::backdrop { background: #0d201fb3; }
       busy = false
       touch()
       refreshStatus()
+      if (lockPending) void lock()
     }
   }
 
@@ -2350,7 +2388,11 @@ dialog::backdrop { background: #0d201fb3; }
 
   async function lock() {
     if (!session) return
-    if (busy) { touch(); return }
+    if (busy) {
+      lockPending = true
+      return
+    }
+    lockPending = false
     busy = true
     refreshStatus()
     try {
@@ -2381,6 +2423,7 @@ dialog::backdrop { background: #0d201fb3; }
       touch()
     } finally {
       busy = false
+      lockPending = false
       refreshStatus()
     }
   }
@@ -3266,9 +3309,10 @@ dialog::backdrop { background: #0d201fb3; }
           await session.handle.requestPermission({mode:'readwrite'}) !== 'granted') {
         throw Error('Accès en écriture au fichier du coffre refusé.')
       }
-      const candidate = await Coffre.derive(current, session.salt)
-      if (!session) return
-      if (!await Coffre.sameKey(session.key, candidate)) throw Error('La phrase secrète actuelle est incorrecte.')
+      const owner = session
+      const correct = await Coffre.verify(owner.key, current, owner.salt)
+      if (session !== owner) return
+      if (!correct) throw Error('La phrase secrète actuelle est incorrecte.')
       notice('rekey-message', 'Chiffrement du coffre avec la nouvelle phrase…')
       const salt = Coffre.freshSalt()
       const key = await Coffre.derive(next, salt)

@@ -67,11 +67,16 @@ export function identite() {
   return {version, site}
 }
 
+// Le navigateur ferme la balise au premier « </script », quelle que soit sa casse : la page serait coupée là, inerte.
+export function verifierScript(script) {
+  if (/<\/script/i.test(script)) throw Error('Le script ne doit pas contenir « </script » (quelle que soit la casse) : la page serait coupée à cet endroit.')
+}
+
 export function assembler() {
   controlerSyntaxe()
   const {version, site} = identite()
   const script = [...modules.map(lireSource), interfaceComplete()].join(';\n')
-  if (script.includes('</script')) throw Error('Le script ne doit pas contenir « </script » : la page serait coupée à cet endroit.')
+  verifierScript(script)
   const empreinte = 'sha256-' + crypto.createHash('sha256').update(script, 'utf8').digest('base64')
 
   let html = lireSource('page.html')

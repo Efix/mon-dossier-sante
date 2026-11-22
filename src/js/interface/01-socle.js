@@ -65,6 +65,8 @@
   let metric = ''
   let unit = ''
   let busy = false
+  // Verrouillage demandé pendant un enregistrement (sélecteur de fichier ouvert) : il a lieu dès la fin de celui-ci.
+  let lockPending = false
   let accessBusy = false
   let timer = null
   let graceUsed = false

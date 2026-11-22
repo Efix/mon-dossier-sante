@@ -59,7 +59,16 @@
   }
   const freshSalt = () => crypto.getRandomValues(new Uint8Array(16))
 
-  async function derive(passphrase, salt) {
+  // Une lettre accentuée peut s'écrire de deux façons (« é » ou « e » suivi de l'accent) selon le clavier ou le
+  // copier-coller. Une nouvelle clé est toujours dérivée de la forme composée (NFC) ; à l'ouverture, les autres
+  // formes sont aussi essayées : saisie brute (coffres des versions antérieures) et forme décomposée (NFD).
+  const forms = passphrase => [...new Set([passphrase.normalize('NFC'), passphrase, passphrase.normalize('NFD')])]
+
+  function derive(passphrase, salt) {
+    return deriveBytes(passphrase.normalize('NFC'), salt)
+  }
+
+  async function deriveBytes(passphrase, salt) {
     const passBytes = encoder.encode(passphrase)
     try {
       const baseKey = await crypto.subtle.importKey('raw', passBytes, 'PBKDF2', false, ['deriveKey'])
@@ -195,14 +204,17 @@
 
   async function open(blob, passphrase) {
     const {header, salt, iv} = await inspect(blob)
-    const key = await derive(passphrase, salt)
     const encrypted = await blob.slice(headerLength).arrayBuffer()
+    let key
     let plaintext
-    try {
-      plaintext = await crypto.subtle.decrypt({name:'AES-GCM', iv, additionalData:header}, key, encrypted)
-    } catch {
-      throw Error('Phrase secrète incorrecte ou coffre endommagé.')
+    for (const form of forms(passphrase)) {
+      key = await deriveBytes(form, salt)
+      try {
+        plaintext = await crypto.subtle.decrypt({name:'AES-GCM', iv, additionalData:header}, key, encrypted)
+        break
+      } catch {}
     }
+    if (!plaintext) throw Error('Phrase secrète incorrecte ou coffre endommagé.')
     try {
       return {key, salt, header, records:unpack(plaintext)}
     } catch {
@@ -259,6 +271,12 @@
     }
   }
 
+  // La phrase saisie correspond-elle à la clé du coffre ouvert, sous l'une de ses formes Unicode ?
+  async function verify(key, passphrase, salt) {
+    for (const form of forms(passphrase)) if (await sameKey(key, await deriveBytes(form, salt))) return true
+    return false
+  }
+
   async function attachment(file) {
     if (file.size < 1 || file.size > MAX_DOCUMENT) throw Error('Choisissez un document non vide de 30 Mo maximum.')
     const bytes = new Uint8Array(await file.arrayBuffer())
@@ -293,6 +311,6 @@
     }
   }
 
-  globalThis.Coffre = {types, labs, fieldRules, MAX_VAULT, MAX_DOCUMENT, safeName, freshSalt, derive, inspect, open, seal, attachment, isPDF, isImage, writeFile, check, sameKey}
+  globalThis.Coffre = {types, labs, fieldRules, MAX_VAULT, MAX_DOCUMENT, safeName, freshSalt, derive, inspect, open, seal, attachment, isPDF, isImage, writeFile, check, sameKey, verify}
 })()
 

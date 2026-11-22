@@ -143,6 +143,7 @@
       $('access-form').reset()
       pendingOpen = null
       lockedCopy = null
+      lockPending = false
       $('accueil').hidden = true
       $('app').hidden = false
       metric = unit = ''
@@ -212,6 +213,7 @@
       busy = false
       touch()
       refreshStatus()
+      if (lockPending) void lock()
     }
   }
 
@@ -225,7 +227,11 @@
 
   async function lock() {
     if (!session) return
-    if (busy) { touch(); return }
+    if (busy) {
+      lockPending = true
+      return
+    }
+    lockPending = false
     busy = true
     refreshStatus()
     try {
@@ -256,6 +262,7 @@
       touch()
     } finally {
       busy = false
+      lockPending = false
       refreshStatus()
     }
   }

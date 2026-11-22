@@ -5,7 +5,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs'
 import vm from 'node:vm'
 import {lireApplication} from './charger.mjs'
-import {paquet} from '../outils/application.mjs'
+import {paquet, defautsCsp} from '../outils/application.mjs'
 import {pageAccueil, scriptPage, empreinteScript} from '../outils/accueil.mjs'
 
 const {html} = lireApplication()
@@ -30,9 +30,7 @@ test('la page d’accueil n’exécute que son script, dont l’empreinte est da
   assert.deepEqual(scripts, [scriptPage])
   assert.equal(empreinteScript, 'sha256-' + crypto.createHash('sha256').update(scriptPage, 'utf8').digest('base64'))
   assert.ok(csp.includes(`script-src '${empreinteScript}';`), csp)
-  assert.match(csp, /default-src 'none'/)
-  assert.match(csp, /connect-src 'none'/)
-  assert.doesNotMatch(csp, /https?:/)
+  assert.deepEqual(defautsCsp(csp), [], 'même liste blanche que l’application')
   new vm.Script(scriptPage)
 })
 

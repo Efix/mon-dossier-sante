@@ -81,17 +81,29 @@
     return (end > max / 2 ? cut.slice(0, end + 1) : cut).trimEnd() + '…'
   }
 
+  // Ce qui suit une mention du patient dans une même cellule n'est jamais repris (colonnes trop proches pour être séparées).
+  const patientMention = /[\s,;–-]+(?:patiente?|nee? le|date de naissance|nom de naissance|naissance|ddn|nir|ipp|securite sociale|nom\s*:|prenom)\b/
+  const beforePatient = text => {
+    const m = plain(text).match(patientMention)
+    return m ? text.slice(0, m.index) : text
+  }
   const doctor = /^(?:(?:dr|docteur|pr|professeur)\.?\s+)/i
-  const shortDoctor = text => clean(text).replace(doctor, match => /^p/i.test(match) ? 'Pr ' : 'Dr ')
+  const shortDoctor = text => clean(beforePatient(clean(text))).replace(doctor, match => /^p/i.test(match) ? 'Pr ' : 'Dr ')
     .replace(/\s*[-–,]\s*(?:rpps\s*:?\s*)?\d{8,}.*$/i, '').replace(/[.,;:\s]+$/, '')
 
   function read(pages) {
-    const all = pages.flatMap(page => page.lines.map(clean).filter(Boolean))
+    // Chaque ligne garde ses cellules : la lecture du PDF sépare par une tabulation les colonnes d'une même ligne.
+    // Médecins et lieu ne sont cherchés que dans une cellule, jamais dans la colonne voisine (celle du patient).
+    const all = pages.flatMap(page => page.lines.map(raw => ({
+      line:clean(raw), cells:String(raw ?? '').split('\t').map(clean).filter(Boolean),
+    }))).filter(row => row.line)
     if (!all.length) return null
     // Lignes répétées sur plusieurs pages : en-têtes et pieds de page, jamais du contenu.
     const seen = new Map()
     for (const page of pages) for (const line of new Set(page.lines.map(clean))) seen.set(line, (seen.get(line) ?? 0) + 1)
-    const lines = pages.length > 1 ? all.filter(line => seen.get(line) < Math.min(pages.length, 3)) : all
+    const rows = pages.length > 1 ? all.filter(row => seen.get(row.line) < Math.min(pages.length, 3)) : all
+    const lines = rows.map(row => row.line)
+    const cells = rows.flatMap(row => row.cells)
 
     const found = {title:'', kind:'', date:'', fields:{}}
 
@@ -134,7 +146,7 @@
     }
 
     // Médecin demandeur.
-    for (const line of lines) {
+    for (const line of cells) {
       const m = plain(line).match(/\b(?:a la demande d[ue]|demande par|adresse(?:e)? par|prescrit(?:e)? par|prescripteur\s*:|medecin prescripteur\s*:|medecin traitant\s*:)\s*/)
       if (!m) continue
       const name = shortDoctor(line.slice(m.index + m[0].length))
@@ -143,17 +155,21 @@
 
     // Praticien : la signature (dernier médecin cité) ou, à défaut, celui de l'en-tête.
     const prescriberKey = plain(found.fields.prescriber ?? '').replace(/^dr /, '')
-    const doctors = lines.filter(line => doctor.test(line) && line.length <= 80 && !/demande|adress|prescri|traitant/.test(plain(line)))
+    const doctors = cells.filter(line => doctor.test(line) && line.length <= 80 && !/demande|adress|prescri|traitant/.test(plain(line)))
       .map(shortDoctor).filter(name => name.split(' ').length >= 2 && (!prescriberKey || !plain(name).includes(prescriberKey)))
     if (doctors.length) found.fields.practitioner = doctors.at(-1).slice(0, limits.practitioner)
 
     // Lieu : premier en-tête qui nomme un centre, un cabinet, une clinique… (sur deux lignes si besoin).
-    for (const [index, line] of lines.slice(0, 15).entries()) {
-      if (!/^(?:centre|cabinet|clinique|polyclinique|hopital|ch[ u]|chu|institut|groupe|scm|selarl|imagerie|maison de sante|service)\b/.test(plain(line))) continue
-      let place = line
-      if (/\b(?:de|du|des|d'|d’|de la|et|en|sur|au|aux)$/i.test(place) && lines[index + 1] && !/\d/.test(lines[index + 1])) place += ' ' + lines[index + 1]
-      found.fields.place = place.replace(/[\s.,:;-]+$/, '').slice(0, limits.place)
-      break
+    place: for (const [index, row] of rows.slice(0, 15).entries()) {
+      for (const cell of row.cells) {
+        const line = clean(beforePatient(cell))
+        if (!/^(?:centre|cabinet|clinique|polyclinique|hopital|ch[ u]|chu|institut|groupe|scm|selarl|imagerie|maison de sante|service)\b/.test(plain(line))) continue
+        let place = line
+        const next = rows[index + 1]?.cells[0]
+        if (line === cell && /\b(?:de|du|des|d'|d’|de la|et|en|sur|au|aux)$/i.test(place) && next && !/\d/.test(next)) place += ' ' + clean(beforePatient(next))
+        found.fields.place = place.replace(/[\s.,:;-]+$/, '').slice(0, limits.place)
+        break place
+      }
     }
 
     for (const [key, value] of Object.entries(found.fields)) if (!value) delete found.fields[key]

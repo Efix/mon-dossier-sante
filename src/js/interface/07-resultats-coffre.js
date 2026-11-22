@@ -234,9 +234,10 @@
           await session.handle.requestPermission({mode:'readwrite'}) !== 'granted') {
         throw Error('Accès en écriture au fichier du coffre refusé.')
       }
-      const candidate = await Coffre.derive(current, session.salt)
-      if (!session) return
-      if (!await Coffre.sameKey(session.key, candidate)) throw Error('La phrase secrète actuelle est incorrecte.')
+      const owner = session
+      const correct = await Coffre.verify(owner.key, current, owner.salt)
+      if (session !== owner) return
+      if (!correct) throw Error('La phrase secrète actuelle est incorrecte.')
       notice('rekey-message', 'Chiffrement du coffre avec la nouvelle phrase…')
       const salt = Coffre.freshSalt()
       const key = await Coffre.derive(next, salt)
