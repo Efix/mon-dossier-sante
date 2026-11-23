@@ -87,6 +87,7 @@
     const m = plain(text).match(patientMention)
     return m ? text.slice(0, m.index) : text
   }
+  const patientStart = /^(?:mme |mlle |m\. |monsieur |madame )?(?:patiente?|nee? le|date de naissance|nom de naissance|naissance|ddn|nir|ipp|n° ?ss|securite sociale|nom\s*(?:d usage\s*)?:|prenom)\b/
   const doctor = /^(?:(?:dr|docteur|pr|professeur)\.?\s+)/i
   const shortDoctor = text => clean(beforePatient(clean(text))).replace(doctor, match => /^p/i.test(match) ? 'Pr ' : 'Dr ')
     .replace(/\s*[-–,]\s*(?:rpps\s*:?\s*)?\d{8,}.*$/i, '').replace(/[.,;:\s]+$/, '')
@@ -104,12 +105,17 @@
     const rows = pages.length > 1 ? all.filter(row => seen.get(row.line) < Math.min(pages.length, 3)) : all
     const lines = rows.map(row => row.line)
     const cells = rows.flatMap(row => row.cells)
+    // Titre, indication et conclusion : chaque cellule s'arrête avant une mention du patient, et une cellule
+    // qui commence par l'identité du patient (colonne voisine) est écartée.
+    const texts = rows.map(row => clean(row.cells.map(cell => clean(beforePatient(cell)))
+      .filter(cell => cell && !patientStart.test(plain(cell))).join(' ')))
 
     const found = {title:'', kind:'', date:'', fields:{}}
 
     // Examen : première ligne courte qui commence par un examen connu ; une ligne en majuscules est préférée.
     const candidates = []
-    for (const [index, line] of lines.slice(0, 80).entries()) {
+    for (const [index, line] of texts.slice(0, 80).entries()) {
+      if (!line) continue
       const text = plain(line).replace(/[^a-z0-9]+/g, ' ').trim()
       if (line.length > 100 || notTitle.test(plain(line)) || headingOf(line)) continue
       const kind = imagingStart.test(text) ? 'imaging' : reportStart.test(text) ? 'report' : ''
@@ -129,7 +135,8 @@
     // Sections : indication et conclusion, jusqu'au titre suivant ou à la formule de politesse.
     let section = null
     const parts = {indication:[], conclusion:[]}
-    for (const line of lines) {
+    for (const line of texts) {
+      if (!line) continue
       const heading = headingOf(line)
       if (heading) {
         section = heading.key === 'other' || parts[heading.key].length ? null : heading.key

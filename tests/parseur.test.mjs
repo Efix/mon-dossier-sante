@@ -97,6 +97,16 @@ test('urines Cerballiance : toute autre section y met fin, pas les en-têtes de 
   assert.deepEqual(lignes(ionogramme), [['Sodium', '140', 'mmol/L', '', '', 1]])
 })
 
+test('urines Cerballiance : un résultat qui ressemble à un titre n’y met pas fin', () => {
+  const bilan = lire([
+    'Cerballiance', 'Prélevé le 12/03/2026', 'BIOCHIMIE DES URINES',
+    'Protéines\t0,12 g/L\t< 0,15', 'Urée\t250 mmol/L', 'Créatinine\t8,5 mmol/L',
+    'BIOCHIMIE DU SANG', 'Urée\t5,2 mmol/L\t2,5 à 7,5',
+  ])
+  assert.deepEqual(lignes(bilan), [['Urée', '5,2', 'mmol/L', '2,5 à 7,5', '', 1]])
+  assert.equal(bilan.urineSkipped, 3)
+})
+
 test('deux dates de prélèvement : le même résultat est gardé pour chacune', () => {
   const cerballiance = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'Glucose\t5,0 mmol/L', '\f', 'Prélevé le 13/03/2026', 'Glucose\t5,0 mmol/L', 'Glucose\t5,0 mmol/L'])
   assert.equal(cerballiance.multipleDates, true)
@@ -124,6 +134,15 @@ test('Check-Up : un examen coupé par un saut de page garde sa valeur et sa date
     ['CREATININA', '0,9', 'mg/dL', '0,7 a 1,2 mg/dL', '2026-02-05', 2],
     ['GLICOSE', '90', 'mg/dL', '', '2026-02-06', 2],
   ])
+})
+
+test('Check-Up : un examen inconnu ne reprend pas le nom de l’examen précédent', () => {
+  const bilan = lire([
+    'CHECK UP LABORATORIO', 'GLICOSE', 'Material: Soro', 'Resultado: 90 mg/dL', 'V.R.: 70 a 99 mg/dL',
+    'FRUTOSAMINA', 'Material: Soro', 'Resultado: 250 µmol/L', 'V.R.: 205 a 285 µmol/L', 'Data da coleta: 05/02/2026',
+  ])
+  assert.deepEqual(lignes(bilan), [['GLICOSE', '90', 'mg/dL', '70 a 99 mg/dL', '', 1]])
+  assert.deepEqual(bilan.unknown, ['FRUTOSAMINA'])
 })
 
 test('urines Check-Up : l’examen s’arrête à sa date de collecte, même sur deux pages', () => {
@@ -352,6 +371,18 @@ test('nouvelle lecture : seuls les résultats absents sont proposés, correction
     'une analyse présente deux fois dans le PDF et une fois dans le bilan : une seule ligne proposée')
 })
 
+test('nouvelle lecture : un bilan à plusieurs dates importé sans date par résultat n’est pas doublé', () => {
+  const anciens = [{name:'Glucose', value:'5,0', unit:'mmol/L', date:''}, {name:'Glucose', value:'5,4', unit:'mmol/L', date:''}]
+  const relus = [
+    {name:'Glucose', value:'5,0', unit:'mmol/L', date:'2026-03-12'}, {name:'Glucose', value:'5,4', unit:'mmol/L', date:'2026-03-13'},
+    {name:'Urée', value:'5,2', unit:'mmol/L', date:'2026-03-13'},
+  ]
+  assert.deepEqual(Lab.missing(anciens, relus).map(item => item.name), ['Urée'])
+  assert.equal(Lab.missing(anciens.slice(0, 1), relus.slice(0, 2)).length, 1, 'une seule ligne ancienne : une seule date reprise')
+  assert.equal(Lab.missing([{name:'Glucose', unit:'mmol/L', date:'2026-03-12'}], relus.slice(1, 2)).length, 1,
+    'deux dates différentes, toutes deux connues : deux résultats distincts')
+})
+
 test('lignes non reconnues : signalées au lieu de disparaître', () => {
   const fr = lire(['Cerballiance', 'Prélevé le 12/03/2026', 'Hémoglobine\t14,5 g/dL\t13,0 à 17,0', 'PSA total\t1,2 ng/mL\t< 4', 'Cystatine C (néphélométrie)\t0,9 mg/L', 'soit\t9,0 mg/L'])
   assert.equal(fr.rows.length, 1)
@@ -359,8 +390,10 @@ test('lignes non reconnues : signalées au lieu de disparaître', () => {
 
   const br = lire(['CHECK UP LABORATORIO', 'PSA TOTAL', 'Resultado: 1,2 ng/mL', 'Data da coleta: 05/02/2026', 'Bastonetes 2 % 80 /mm³'])
   assert.equal(br.rows.length, 0)
-  assert.equal(br.unnamed, 1)
-  assert.deepEqual(br.unknown, ['Bastonetes'])
+  assert.equal(br.unnamed, 0, 'le titre de l’examen est connu, même si l’analyse ne l’est pas')
+  assert.deepEqual(br.unknown, ['PSA TOTAL', 'Bastonetes'])
+  const sansTitre = lire(['CHECK UP LABORATORIO', 'Resultado: 1,2 ng/mL', 'Data da coleta: 05/02/2026'])
+  assert.equal(sansTitre.unnamed, 1)
 })
 
 test('résultat qualitatif noyé dans un long paragraphe : ramené sous la limite du coffre', () => {

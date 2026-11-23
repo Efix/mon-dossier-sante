@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-CBt2iqfnYYSSfL6rBPHFwrrVjP1C2Skg0mI4vHpfUEw=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-xIqDp4JuM2/6kO81ZhRqiK4ZuuhJreuetE4n00fC6Gc=' blob:; worker-src blob:; style-src 'unsafe-inline'; connect-src 'none'; object-src 'none'; frame-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
   <meta name="application-version" content="1.3.0">
@@ -1001,10 +1001,13 @@ dialog::backdrop { background: #0d201fb3; }
           collected = date
         }
         const heading = fold(line)
-        if (urineSection.test(heading)) urine = true
-        else if (sectionEnds(heading)) urine = false
         if (!line) continue
         const items = measures(line)
+        // Un titre de section n'a pas de valeur : « Protéines 0,12 g/L » est un résultat d'urine, pas la section « Protéines ».
+        if (!items.length) {
+          if (urineSection.test(heading)) urine = true
+          else if (sectionEnds(heading)) urine = false
+        }
         if (urine) {
           if (items.length) urineSkipped++
           continue
@@ -1091,11 +1094,17 @@ dialog::backdrop { background: #0d201fb3; }
     let active = null
     let references = false
     let pending = []
+    // Titre d'un examen non reconnu : son résultat ne doit pas prendre le nom de l'examen précédent.
+    let orphan = ''
     const add = item => {
       rows.push(item)
       pending.push(item)
       return item
     }
+    // Lignes répétées d'une page à l'autre (en-tête du laboratoire, patient) : jamais un titre d'examen.
+    const seen = new Map()
+    for (const {lines} of pages) for (const line of new Set(lines.map(clean))) seen.set(line, (seen.get(line) ?? 0) + 1)
+    const repeated = line => pages.length > 1 && seen.get(line) > 1
     for (const {number:page, lines} of pages) {
       for (const raw of lines) {
         const line = clean(raw)
@@ -1107,6 +1116,7 @@ dialog::backdrop { background: #0d201fb3; }
           pending.forEach(item => { item.date = date })
           pending = []
           label = ''
+          orphan = ''
           active = null
           references = false
           urine = false
@@ -1137,6 +1147,11 @@ dialog::backdrop { background: #0d201fb3; }
           references = false
           continue
         }
+        if (result && orphan && firstBRMeasurement(result[1])) {
+          noteUnknown(unknown, orphan)
+          orphan = ''
+          continue
+        }
         if (result && firstBRMeasurement(result[1])) unnamed++
         if (keyFor(label) === 'vdrl' && !active && textResult.test(line)) {
           active = add(row(label, {value:shortText(line), unit:''}, page))
@@ -1150,6 +1165,7 @@ dialog::backdrop { background: #0d201fb3; }
         const inlineLabel = first ? labelText(line.slice(0, first.start)) : labelText(line)
         if (keyFor(inlineLabel)) {
           label = inlineLabel
+          orphan = ''
           references = false
           active = first ? add(row(label, first, page, referenceFR(line.slice(first.end)))) : null
           continue
@@ -1159,10 +1175,21 @@ dialog::backdrop { background: #0d201fb3; }
           const measurement = firstBRMeasurement(cells.join(' '))
           if (measurement) {
             label = colLabel
+            orphan = ''
             active = add(row(label, measurement, page))
             references = false
             continue
           }
+        }
+        // Titre en majuscules, seul sur sa ligne et sans valeur : un examen commence, même s'il n'est pas reconnu.
+        if (!first && !result && !line.includes(':') && /\p{Lu}{3}/u.test(line) && !/\p{Ll}/u.test(line) && line.length <= 80 &&
+          !textResult.test(line) && !repeated(line) &&
+          !/^(?:material|metodo|amostra|atencao|obs|observac|nota|assinatura|laudo|check up|liberado|responsavel)/.test(heading)) {
+          label = ''
+          orphan = labelText(line)
+          active = null
+          references = false
+          continue
         }
         if (first?.start && !references && !result) noteUnknown(unknown, inlineLabel)
         if (/^(?:atencao|obs|observac|nota|amostras |assinatura|material|metodo|check up |laudo )/.test(heading)) references = false
@@ -1235,15 +1262,21 @@ dialog::backdrop { background: #0d201fb3; }
   // Nouvelle lecture d'un bilan déjà enregistré : résultats lus qui n'y figurent pas encore.
   // Une analyse déjà présente dans la même unité et à la même date est considérée comme lue, même si
   // sa valeur ou son nom ont été corrigés à la main : une correction n'est jamais doublée par l'original.
+  // Une date vide est celle du bilan. Un bilan à plusieurs dates importé avant la 1.3 n'a aucune date par
+  // résultat : après les correspondances exactes, une date vide d'un côté vaut n'importe quelle date de l'autre.
   function missing(existing, proposed) {
-    const signature = item => [groupFor(item.name), unitKey(item.unit), item.date || ''].join('\u001f')
-    const present = new Map()
-    for (const item of existing) present.set(signature(item), (present.get(signature(item)) ?? 0) + 1)
-    return proposed.filter(item => {
-      const count = present.get(signature(item)) ?? 0
-      if (count) present.set(signature(item), count - 1)
-      return !count
-    })
+    const key = item => groupFor(item.name) + '\u001f' + unitKey(item.unit)
+    const remaining = new Map()
+    for (const item of existing) remaining.set(key(item), [...remaining.get(key(item)) ?? [], item.date || ''])
+    const take = (item, matches) => {
+      const dates = remaining.get(key(item)) ?? []
+      const index = dates.findIndex(matches)
+      if (index < 0) return false
+      dates.splice(index, 1)
+      return true
+    }
+    const unmatched = proposed.filter(item => !take(item, date => date === (item.date || '')))
+    return unmatched.filter(item => !take(item, date => !date || !item.date))
   }
 
   globalThis.Lab = {markers, fold, groupFor, nameFor, validDate, unitKey, exactNumber, pagesFromText, parse, missing, referenceRange, judge}
@@ -1820,6 +1853,7 @@ dialog::backdrop { background: #0d201fb3; }
     const m = plain(text).match(patientMention)
     return m ? text.slice(0, m.index) : text
   }
+  const patientStart = /^(?:mme |mlle |m\. |monsieur |madame )?(?:patiente?|nee? le|date de naissance|nom de naissance|naissance|ddn|nir|ipp|n° ?ss|securite sociale|nom\s*(?:d usage\s*)?:|prenom)\b/
   const doctor = /^(?:(?:dr|docteur|pr|professeur)\.?\s+)/i
   const shortDoctor = text => clean(beforePatient(clean(text))).replace(doctor, match => /^p/i.test(match) ? 'Pr ' : 'Dr ')
     .replace(/\s*[-–,]\s*(?:rpps\s*:?\s*)?\d{8,}.*$/i, '').replace(/[.,;:\s]+$/, '')
@@ -1837,12 +1871,17 @@ dialog::backdrop { background: #0d201fb3; }
     const rows = pages.length > 1 ? all.filter(row => seen.get(row.line) < Math.min(pages.length, 3)) : all
     const lines = rows.map(row => row.line)
     const cells = rows.flatMap(row => row.cells)
+    // Titre, indication et conclusion : chaque cellule s'arrête avant une mention du patient, et une cellule
+    // qui commence par l'identité du patient (colonne voisine) est écartée.
+    const texts = rows.map(row => clean(row.cells.map(cell => clean(beforePatient(cell)))
+      .filter(cell => cell && !patientStart.test(plain(cell))).join(' ')))
 
     const found = {title:'', kind:'', date:'', fields:{}}
 
     // Examen : première ligne courte qui commence par un examen connu ; une ligne en majuscules est préférée.
     const candidates = []
-    for (const [index, line] of lines.slice(0, 80).entries()) {
+    for (const [index, line] of texts.slice(0, 80).entries()) {
+      if (!line) continue
       const text = plain(line).replace(/[^a-z0-9]+/g, ' ').trim()
       if (line.length > 100 || notTitle.test(plain(line)) || headingOf(line)) continue
       const kind = imagingStart.test(text) ? 'imaging' : reportStart.test(text) ? 'report' : ''
@@ -1862,7 +1901,8 @@ dialog::backdrop { background: #0d201fb3; }
     // Sections : indication et conclusion, jusqu'au titre suivant ou à la formule de politesse.
     let section = null
     const parts = {indication:[], conclusion:[]}
-    for (const line of lines) {
+    for (const line of texts) {
+      if (!line) continue
       const heading = headingOf(line)
       if (heading) {
         section = heading.key === 'other' || parts[heading.key].length ? null : heading.key
@@ -3721,6 +3761,10 @@ dialog::backdrop { background: #0d201fb3; }
         if (draft !== active) return
       } else if (biology && !Coffre.isPDF(attachment.bytes)) {
         notice('import-message', 'L’extraction automatique lit les PDF avec du texte. Vous pouvez saisir ou coller les valeurs pour ce fichier.', 'warn')
+      } else if (biology) {
+        // Le bilan a déjà des lignes : rien n'est remplacé, mais elles ne viennent peut-être pas de ce fichier.
+        notice('import-message', 'Nouveau fichier joint. Les résultats déjà saisis sont conservés : cliquez sur « Relire le PDF » ' +
+          'pour ajouter ceux qu’il contient, et retirez les lignes qui n’y figurent pas.', 'warn')
       }
       if (!$('doc-title').value) {
         $('doc-title').value = ($('doc-kind').value === 'bio' ? 'Bilan biologique' :

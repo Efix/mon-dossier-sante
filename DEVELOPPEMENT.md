@@ -85,7 +85,7 @@ Les tests (Node 22 ou plus récent, sans dépendance) chargent le code depuis `s
 | --- | --- |
 | `tests/fichier.test.mjs` | HTML à jour avec les sources, empreinte CSP, fins de ligne, PDF.js intact, aucune connexion réseau autorisée |
 | `tests/parseur.test.mjs` | Lecture des bilans Cerballiance et Check-Up, nombres, unités, sections d'urines |
-| `tests/coffre.test.mjs` | Chiffrement, relecture avant écriture, limites du format, fiches structurées et comptes rendus (formats 1 à 3), changement de phrase secrète |
+| `tests/coffre.test.mjs` | Chiffrement, relecture avant écriture, limites du format, fiches structurées et comptes rendus (formats 1 à 3), changement de phrase secrète, réouverture des coffres écrits par la v1.0.0 (`tests/coffres-v1.0.0.json`, fictifs, à ne jamais régénérer) |
 | `tests/compte-rendu.test.mjs` | Lecture des comptes rendus d'imagerie et de consultation, date d'examen distinguée de la date de naissance, aucune donnée d'identité reprise |
 | `tests/publication.test.mjs` | Version déclarée par l'application, page d'accueil du site : script autorisé par sa CSP, aucune connexion, liens de téléchargement et d'ouverture, empreinte |
 | `tests/dossier.test.mjs` | Fiches (allergies, traitements, vaccinations, antécédents), traitements en cours, rappels de vaccination, saisie des mesures et IMC |

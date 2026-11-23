@@ -1,0 +1,207 @@
+[
+ {
+  "nom": "format 1 : bilan avec pièce jointe",
+  "phrase": "phrase de test jetable 123",
+  "format": 1,
+  "coffre": "RlhTQU5URTFLK6zSxWU1LYag/mF16g4Rg8VzQ7ljMlQ+6zhOKP4+fAll3SoFCL9QToZi66JjOFYEZ14uDsRb1vSRmkqdpnVLjxlmM0uV6gGLOTDZHU8oov85Q9mHVRuih0VHvZcEI7r8LzuDVLE+VATdNn0HUsB6+6uPLghe/8qieP3n01DxZLlGkICYvZayvQyWdnY6NR8c1mPFXO/CGu6Sv851nHt+WRp4gVPF4nIkBZQg1Vndmcaf+/ERBySkN1aZYZ3v0xd8Z8+xLP0rEDKyYEH30oKOf3UleNtEAPIrGbs+FxFXS+Fni3l6ATF7BJSP+pvddDe1pdbNxFD8DvRrZV+bqCfyDvJTfj4G7D8J8ojievJ4kpnMgTkj0uYIN23nInmqcE3ZZszvgH60ez2BuysSrs2m75QVNDaUdwF5HMy6jKkNf7u03q6i/oCORWSOVsagVznELDVK0oviOojxsgALx4FDEVPwRGEOmEntUdgMfNhkklmOhHZl0Ulv9B5+EUwu0aOVY1Akd3nxGIdNmBllcM2qaAUdU4HmXilAiHerzZc/teTgBIZbwg8/qzjv2MjLv36CUN9vQHrd5+F3D8lVndECNkdab+ISf7HFZ9Iyb6WrLdfYeOCiy5vF7uehfbPnzDNz90YuE/dZOUbWoGA1+1w5dIVndAaNiQwsNI9F+Lkt966CAUJk1Pc5qxoawNtt3owNbpYwkcxvG2xb5vQqrUygySKJLQzVoyjAwpxDlIJByDYbHSo2OjbxSk2sBmhH89mFCHpwF2JO7V8Q3VYnktGBB/Qnppt/aQdT4C2qQ+eixJ7vdvzzo7qefz1p4xRBXkO1gM1FPn91EIMpBaYhpiPGY7/nNc+9zWWo3SmD8bxPMLhZ5DzGQFh4f5CYl+lVgztZ7CFBbOx/VEuOyx1oIap0FPlCvCGF2Whdtdkg8TlLcZat276v8SaFsHmK5tS7SRrTt6dtE2k4qRNf",
+  "attendu": [
+   {
+    "id": "b1",
+    "kind": "bio",
+    "lab": "cerballiance",
+    "date": "2026-03-12",
+    "title": "Bilan biologique fictif",
+    "notes": "Note de test",
+    "file": {
+     "name": "bilan-fictif.pdf",
+     "hash": "6a34e88c9574ef70ffbec6efa015fb51082d301456b3f5b8fd598cf2495908be",
+     "bytes": "JVBERi0xLjQKJSBiaWxhbiBmaWN0aWYgcG91ciBsZXMgdGVzdHMKJSVFT0YK"
+    },
+    "results": [
+     {
+      "id": "r1",
+      "name": "Glucose",
+      "value": "5,0",
+      "unit": "mmol/L",
+      "reference": "4,1 à 5,9",
+      "date": "",
+      "page": 1
+     },
+     {
+      "id": "r2",
+      "name": "Glucose",
+      "value": "5,4",
+      "unit": "mmol/L",
+      "reference": "4,1 à 5,9",
+      "date": "2026-03-13",
+      "page": 1
+     }
+    ]
+   },
+   {
+    "id": "o1",
+    "kind": "rx",
+    "lab": "",
+    "date": "2026-01-02",
+    "title": "Ordonnance fictive",
+    "notes": "",
+    "file": null,
+    "results": []
+   }
+  ]
+ },
+ {
+  "nom": "format 2 : fiches et mesures",
+  "phrase": "phrase de test jetable 123",
+  "format": 2,
+  "coffre": "RlhTQU5URTFGRiDoBup4XzPxvylp53EQxH1cQscRyNVhaZMkhIOqpmbeR9PIM26+s07mOZHZUx2Op+/zW2oqaIKarZ/2dIXOxo5yKVZjVUiazRl0Z13dkmBS9bUFtBGHX+9Tg1Lh0BKxYjvGDYEaynMQXO9ZUKI0jpxUay6mfHKmNvJ5naUFvJU3l8QcDDzlLraltt24W7IdT3IlmcRNJ9QD40sjw1wYjOTJpUi4DpN8Atso3NeofJjMeO5IwnuldkdH7jl5kuvGVuws90yxAIlaOHEpqaJ6f3lYKf/wDMmaBbAJr8x9mqqd70M9bk9It4FfShMAFfgFMkOjifSb9l9RsFfVR1/bgQc4d/i6UQ3zF7r8536WvctU83uap4Ih92d/FOh+KaaNN5FsNhgFo7L3ei/mxElK8Wt8yfbpjb/OGZlv+MquES70VIr6JqRutwUncxsKCi8i+pygnvuQ1lEuS2JNqgxOgpYXQ5yvN1dbDLk4d/D/6ymmEhOVQhj8WUt8lwyTT6wX/JxTVnC8mtuDcjDzeFf0jd99qhPceVKX1YKNqRxGoMGFhEWojR377tmDIU2NlAveY8FNLaiGyRdgkXF3x7AQVqu+gbTNvhXS76HwlapINn6bElTdAc9hJLS8oj5QiuESuU1leAwVdjdkRz0py5fSZ2LZ3w8QmBzj2whDISyXbN88nc7iK6n4srOMWX+eSktTGJhnXxPerju3y7+CYfI0sZDTcjrOotTurkTG53p0nc9OyPPlwpYhnvUN5SMmJKozdWZPWsV75d7gpArUUdNmTivugdCzHGpLyhuqJkf0aJ0xqhkgHKxQZAG5d77q6aDzE8EcL7e9HWW4n/Hx+WMjd98Pucs7SBR8JNPTZ+ZcCi4edk5DYwBdR14l+QhPLPXPNb3sz5URY+qT4WWy6TbUUCS/kSb6Jov1aLDFsKauB4dSvdWX143qLaTvBhH0uU4B/hN6joCa46zLHzfSv7W7SblFy0MQMGEhnRQy56gJ5weCTEoSGsj7lB+vKqWtFRJwxhv8GfOijp37DPL3MPJpx7iKb4AUfLNWkKthggbQvjNWfXWHoT2DuNOYQpt0iHz0jJYq1ee/l92He78ukyKFO8TM65SdD+JZFA6TCnqOs3OM8yiFuSL00c2QXaVa51cqGoGBHxruVZbgskWVl54CzpT6XOYo/D6DtDlVuoSFnjzbGXz3MaWji1U3bF3n41ArKPz2/+8AIslRp93Mc+aErdjxfzQ4HUegxw==",
+  "attendu": [
+   {
+    "id": "v1",
+    "kind": "vaccine",
+    "lab": "",
+    "date": "2024-05-10",
+    "title": "Rappel DTP",
+    "notes": "",
+    "file": null,
+    "results": [],
+    "fields": {
+     "vaccine": "Tétanos",
+     "lot": "AB123",
+     "booster": "2034-05-10"
+    }
+   },
+   {
+    "id": "t1",
+    "kind": "treatment",
+    "lab": "",
+    "date": "2026-01-15",
+    "title": "Traitement fictif",
+    "notes": "",
+    "file": null,
+    "results": [],
+    "fields": {
+     "dose": "1 comprimé le matin"
+    }
+   },
+   {
+    "id": "a1",
+    "kind": "allergy",
+    "lab": "",
+    "date": "2010-06-01",
+    "title": "Allergie fictive",
+    "notes": "",
+    "file": null,
+    "results": [],
+    "fields": {
+     "reaction": "Urticaire",
+     "severity": "severe"
+    }
+   },
+   {
+    "id": "h1",
+    "kind": "history",
+    "lab": "",
+    "date": "1998-03-01",
+    "title": "Antécédent fictif",
+    "notes": "",
+    "file": null,
+    "results": [],
+    "fields": {
+     "category": "surgical"
+    }
+   },
+   {
+    "id": "m1",
+    "kind": "measure",
+    "lab": "",
+    "date": "2026-11-17",
+    "title": "Relevé de mesures",
+    "notes": "",
+    "file": null,
+    "results": [],
+    "fields": {
+     "weight": "72,5",
+     "systolic": "125",
+     "diastolic": "80"
+    }
+   }
+  ]
+ },
+ {
+  "nom": "format 3 : compte rendu",
+  "phrase": "phrase de test jetable 123",
+  "format": 3,
+  "coffre": "RlhTQU5URTES6i3IfXu1vUkZJb036eZGo8OBHTk4oIEBeAdIvxDJeLGcuF2OuRRutuPaCQeRXCrfBxVZNpirQelmcVKwmoEVqXUErexS86dXtaSOCBOfvvZi1ZiCQXo+3kwq/f4jYYPWu1gtdruCAhPk8AW150y1rcNPwoP6Dh0zFq8DqXUkyxhnFFYpcnkHpjhxP5azljiMvI/CpkBIXTmxFKhEA+uqi8q+q0pXS38zMggDBeZmGGZjENWmnmYN2gDd0KksG2bROKovvFsNAxaYd9tIE+5RUHCnUh+6C0r6ayjrnf4NbvNUY2Z62unHXvEL6XcQJEN+gkh1ngiAvU1sYASEevM5qrTUGANaSjKibyAQjFS+HHB2Gv8iurIrX3qNtmtgFtVuLdidg4UKboav1QqmDMAsM/SfBvBwAT4Io3CLCCceFlsjzAtIIFLILYyBOY0rmXNCt6bs2UD92aUXhl7KRf1LKJeuJT03s8jyu83MM6hFaTU=",
+  "attendu": [
+   {
+    "id": "i1",
+    "kind": "imaging",
+    "lab": "",
+    "date": "2026-04-14",
+    "title": "Échographie fictive",
+    "notes": "",
+    "file": null,
+    "results": [],
+    "fields": {
+     "conclusion": "Examen fictif normal.\n- Pas d’anomalie.",
+     "indication": "Contrôle",
+     "prescriber": "Dr Fictif",
+     "practitioner": "Dr Exemple",
+     "place": "Centre fictif"
+    }
+   }
+  ]
+ },
+ {
+  "nom": "phrase accentuée saisie en NFD",
+  "phrase": "phrase très sûre à Noël 2026",
+  "format": 1,
+  "coffre": "RlhTQU5URTGLW3Rr0I/qhTKQfwjUZ+3MrujpkhBR0OiGVjCAY8C+7mCGuSugQS5aHyzK3Jgz65Rggv4PReBY2UmEr5KmPCKqY+5U0zaq8gZVGarSL9e9BVDBmhaHvavm3yB/qGchP7uBiBIqBCK0ppvBc7pgw4M/G0H1Yyy2paFUEHGWPTrwBzhhPJrpG1hPPxfqKBy5RahTpWidHk6IB3lJ2EtgpdfB4Q3kg2nYMZSMKPn+7dZ1gFjFbTU0hYuJPhOFtQgLwDKiJDSozTN4NBx/F8vLev02X0xBlzx7y4DS+NA30vWpkGHi7DdFlY5rH9be5MJ1EfRIfOJu/d5w1nBOjZrAox5ObPlzLqtJ7lMTgVa9MXT4MfQja3UPOvSndoUuAR9b1xRcGglJJR+27zq+5W5kVqhOVc//z9c13w7o3uv6rNBUsUOGcVK0x1gCvp45umyCF6TS5Z2vxmSrXBC4nd8IY7i9fpgeP0ah1H0BFTexFwWqERVUE0W0I6WVnULcjIUoqeoe2HSsumRFYKe210OZHdmFCNnW6+rM9hDAr9fZ/wPMVxuDnTuQ15L4BKwRLeWl0BUkQtusBP5pY/4sRFxTkAz1w365gXSsnEU44NfeVBmggtbs4yvTuQhpY/MjUpjqGKhaDUFmfQZYuXdOTBZQt/bdS5ZwE8PHOcYhP0wjvyL//+4kXnMdw8BoGpu9LvJTrVWvkIkOgl2spT5x5fJ5cImRdwRQZ6fy1cbSG5s9sDl0/0cI7oQiZyKi2x6qG3/z33Jhh/jeFzkh9JikjjN/dFrQKamkRZwrcwTvH7Gl+XXf7C2nLuI7x5vFl9TO4wpBs75AQ/oqN5kfwEs5VQF/QfL/8cClbiypRBJImtbB0YrhQpukVGzkrKEdy7ab7+DFi2Yp7vx/sjSoEWlW00Fi/ex8mGV9o3g5ufmnqqWn3MwE6aU3U9qQZWv/4qfMRUZMU7/CntwgwDG1iU7e",
+  "attendu": [
+   {
+    "id": "b1",
+    "kind": "bio",
+    "lab": "cerballiance",
+    "date": "2026-03-12",
+    "title": "Bilan biologique fictif",
+    "notes": "Note de test",
+    "file": {
+     "name": "bilan-fictif.pdf",
+     "hash": "6a34e88c9574ef70ffbec6efa015fb51082d301456b3f5b8fd598cf2495908be",
+     "bytes": "JVBERi0xLjQKJSBiaWxhbiBmaWN0aWYgcG91ciBsZXMgdGVzdHMKJSVFT0YK"
+    },
+    "results": [
+     {
+      "id": "r1",
+      "name": "Glucose",
+      "value": "5,0",
+      "unit": "mmol/L",
+      "reference": "4,1 à 5,9",
+      "date": "",
+      "page": 1
+     },
+     {
+      "id": "r2",
+      "name": "Glucose",
+      "value": "5,4",
+      "unit": "mmol/L",
+      "reference": "4,1 à 5,9",
+      "date": "2026-03-13",
+      "page": 1
+     }
+    ]
+   },
+   {
+    "id": "o1",
+    "kind": "rx",
+    "lab": "",
+    "date": "2026-01-02",
+    "title": "Ordonnance fictive",
+    "notes": "",
+    "file": null,
+    "results": []
+   }
+  ]
+ }
+]

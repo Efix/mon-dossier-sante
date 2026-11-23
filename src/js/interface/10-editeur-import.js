@@ -158,6 +158,10 @@
         if (draft !== active) return
       } else if (biology && !Coffre.isPDF(attachment.bytes)) {
         notice('import-message', 'L’extraction automatique lit les PDF avec du texte. Vous pouvez saisir ou coller les valeurs pour ce fichier.', 'warn')
+      } else if (biology) {
+        // Le bilan a déjà des lignes : rien n'est remplacé, mais elles ne viennent peut-être pas de ce fichier.
+        notice('import-message', 'Nouveau fichier joint. Les résultats déjà saisis sont conservés : cliquez sur « Relire le PDF » ' +
+          'pour ajouter ceux qu’il contient, et retirez les lignes qui n’y figurent pas.', 'warn')
       }
       if (!$('doc-title').value) {
         $('doc-title').value = ($('doc-kind').value === 'bio' ? 'Bilan biologique' :

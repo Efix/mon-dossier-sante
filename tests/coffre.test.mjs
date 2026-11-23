@@ -1,6 +1,7 @@
 // Coffre chiffré : ce qui est écrit doit toujours pouvoir être rouvert, à l'identique.
 import {test} from 'node:test'
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
 import {charger} from './charger.mjs'
 
 const {Coffre} = charger()
@@ -225,4 +226,29 @@ test('phrase secrète accentuée : le coffre s’ouvre quelle que soit sa forme 
   assert.equal(await Coffre.verify(brute, nfc, s), true)
   assert.equal(await Coffre.verify(brute, 'une autre phrase de test', s), false)
   await assert.rejects(Coffre.open(ancien.blob, 'une autre phrase de test'), /Phrase secrète incorrecte/)
+})
+
+// Coffres écrits une fois pour toutes par la v1.0.0 (données fictives, phrases jetables) : les tests ci-dessus
+// relisent ce que le code actuel vient d'écrire ; ceux-ci vérifient qu'un vrai coffre ancien s'ouvre toujours.
+// Ne jamais les régénérer : ils doivent rester ceux de la v1.0.0.
+const figes = JSON.parse(fs.readFileSync(new URL('./coffres-v1.0.0.json', import.meta.url), 'utf8'))
+
+test('coffres écrits par la v1.0.0 : formats 1, 2 et 3 rouverts à l’identique', async () => {
+  assert.deepEqual(figes.map(cas => cas.format), [1, 2, 3, 1])
+  for (const {nom, phrase, coffre, attendu} of figes) {
+    const {records} = await Coffre.open(new Blob([Buffer.from(coffre, 'base64')]), phrase)
+    const lus = records.map(record => ({...record, file:record.file && {...record.file, bytes:Buffer.from(record.file.bytes).toString('base64')}}))
+    for (const [index, fiche] of attendu.entries()) {
+      for (const [champ, valeur] of Object.entries(fiche)) assert.deepEqual(lus[index][champ], valeur, nom + ' · ' + fiche.title + ' · ' + champ)
+    }
+    assert.equal(lus.length, attendu.length, nom)
+  }
+})
+
+test('coffre de la v1.0.0 à phrase accentuée saisie en NFD : s’ouvre aussi en NFC', async () => {
+  const {phrase, coffre} = figes[3]
+  assert.notEqual(phrase, phrase.normalize('NFC'))
+  const blob = new Blob([Buffer.from(coffre, 'base64')])
+  assert.equal((await Coffre.open(blob, phrase.normalize('NFC'))).records.length, 2)
+  await assert.rejects(Coffre.open(blob, 'phrase de test jetable 123'), /Phrase secrète incorrecte/)
 })

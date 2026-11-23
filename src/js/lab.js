@@ -273,10 +273,13 @@
           collected = date
         }
         const heading = fold(line)
-        if (urineSection.test(heading)) urine = true
-        else if (sectionEnds(heading)) urine = false
         if (!line) continue
         const items = measures(line)
+        // Un titre de section n'a pas de valeur : « Protéines 0,12 g/L » est un résultat d'urine, pas la section « Protéines ».
+        if (!items.length) {
+          if (urineSection.test(heading)) urine = true
+          else if (sectionEnds(heading)) urine = false
+        }
         if (urine) {
           if (items.length) urineSkipped++
           continue
@@ -363,11 +366,17 @@
     let active = null
     let references = false
     let pending = []
+    // Titre d'un examen non reconnu : son résultat ne doit pas prendre le nom de l'examen précédent.
+    let orphan = ''
     const add = item => {
       rows.push(item)
       pending.push(item)
       return item
     }
+    // Lignes répétées d'une page à l'autre (en-tête du laboratoire, patient) : jamais un titre d'examen.
+    const seen = new Map()
+    for (const {lines} of pages) for (const line of new Set(lines.map(clean))) seen.set(line, (seen.get(line) ?? 0) + 1)
+    const repeated = line => pages.length > 1 && seen.get(line) > 1
     for (const {number:page, lines} of pages) {
       for (const raw of lines) {
         const line = clean(raw)
@@ -379,6 +388,7 @@
           pending.forEach(item => { item.date = date })
           pending = []
           label = ''
+          orphan = ''
           active = null
           references = false
           urine = false
@@ -409,6 +419,11 @@
           references = false
           continue
         }
+        if (result && orphan && firstBRMeasurement(result[1])) {
+          noteUnknown(unknown, orphan)
+          orphan = ''
+          continue
+        }
         if (result && firstBRMeasurement(result[1])) unnamed++
         if (keyFor(label) === 'vdrl' && !active && textResult.test(line)) {
           active = add(row(label, {value:shortText(line), unit:''}, page))
@@ -422,6 +437,7 @@
         const inlineLabel = first ? labelText(line.slice(0, first.start)) : labelText(line)
         if (keyFor(inlineLabel)) {
           label = inlineLabel
+          orphan = ''
           references = false
           active = first ? add(row(label, first, page, referenceFR(line.slice(first.end)))) : null
           continue
@@ -431,10 +447,21 @@
           const measurement = firstBRMeasurement(cells.join(' '))
           if (measurement) {
             label = colLabel
+            orphan = ''
             active = add(row(label, measurement, page))
             references = false
             continue
           }
+        }
+        // Titre en majuscules, seul sur sa ligne et sans valeur : un examen commence, même s'il n'est pas reconnu.
+        if (!first && !result && !line.includes(':') && /\p{Lu}{3}/u.test(line) && !/\p{Ll}/u.test(line) && line.length <= 80 &&
+          !textResult.test(line) && !repeated(line) &&
+          !/^(?:material|metodo|amostra|atencao|obs|observac|nota|assinatura|laudo|check up|liberado|responsavel)/.test(heading)) {
+          label = ''
+          orphan = labelText(line)
+          active = null
+          references = false
+          continue
         }
         if (first?.start && !references && !result) noteUnknown(unknown, inlineLabel)
         if (/^(?:atencao|obs|observac|nota|amostras |assinatura|material|metodo|check up |laudo )/.test(heading)) references = false
@@ -507,15 +534,21 @@
   // Nouvelle lecture d'un bilan déjà enregistré : résultats lus qui n'y figurent pas encore.
   // Une analyse déjà présente dans la même unité et à la même date est considérée comme lue, même si
   // sa valeur ou son nom ont été corrigés à la main : une correction n'est jamais doublée par l'original.
+  // Une date vide est celle du bilan. Un bilan à plusieurs dates importé avant la 1.3 n'a aucune date par
+  // résultat : après les correspondances exactes, une date vide d'un côté vaut n'importe quelle date de l'autre.
   function missing(existing, proposed) {
-    const signature = item => [groupFor(item.name), unitKey(item.unit), item.date || ''].join('\u001f')
-    const present = new Map()
-    for (const item of existing) present.set(signature(item), (present.get(signature(item)) ?? 0) + 1)
-    return proposed.filter(item => {
-      const count = present.get(signature(item)) ?? 0
-      if (count) present.set(signature(item), count - 1)
-      return !count
-    })
+    const key = item => groupFor(item.name) + '\u001f' + unitKey(item.unit)
+    const remaining = new Map()
+    for (const item of existing) remaining.set(key(item), [...remaining.get(key(item)) ?? [], item.date || ''])
+    const take = (item, matches) => {
+      const dates = remaining.get(key(item)) ?? []
+      const index = dates.findIndex(matches)
+      if (index < 0) return false
+      dates.splice(index, 1)
+      return true
+    }
+    const unmatched = proposed.filter(item => !take(item, date => date === (item.date || '')))
+    return unmatched.filter(item => !take(item, date => !date || !item.date))
   }
 
   globalThis.Lab = {markers, fold, groupFor, nameFor, validDate, unitKey, exactNumber, pagesFromText, parse, missing, referenceRange, judge}

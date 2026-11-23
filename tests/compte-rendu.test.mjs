@@ -131,3 +131,21 @@ test('en-tête sur deux colonnes : l’identité du patient voisine d’un méde
     assert.equal(texte.includes(identite), false, identite + ' ne doit jamais être repris')
   }
 })
+
+test('titre, indication et conclusion : la colonne du patient n’y entre jamais', () => {
+  const colonnes = lire([
+    'IRM DU GENOU DROIT\tPatient : M. Jean EXEMPLE né le 12/05/1970',
+    'INDICATION : Douleur après une chute.\tIPP 123456',
+    'CONCLUSION :',
+    'Pas de lésion méniscale.\tNIR : 1700512345678',
+    'Accolé : examen sans anomalie, patient né le 12/05/1970',
+  ])
+  assert.equal(colonnes.title, 'IRM du genou droit')
+  assert.equal(colonnes.kind, 'imaging')
+  assert.equal(colonnes.fields.indication, 'Douleur après une chute.')
+  assert.equal(colonnes.fields.conclusion, 'Pas de lésion méniscale. Accolé : examen sans anomalie')
+  const texte = JSON.stringify(colonnes)
+  for (const identite of ['EXEMPLE', 'Jean', '1970', '1700512345678', '123456']) {
+    assert.equal(texte.includes(identite), false, identite + ' ne doit jamais être repris')
+  }
+})
